@@ -1,0 +1,76 @@
+\documentclass[sigplan,10pt,review,anonymous]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+\usepackage{times}
+\usepackage{datetime}
+\usepackage{url}
+\usepackage{hyperref}
+
+\usepackage[normalem]{ulem}
+\usepackage{multirow}
+\usepackage{comment}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{verbatimbox}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{booktabs}
+\usepackage[keeplastbox]{flushend}
+\usepackage{enumitem}
+\usepackage{caption}
+
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=1pt] (char) {\small #1};}}
+
+\newcommand{\todo}[1]{{\color{red}\bfseries [[#1]]}}
+\newcommand{\XZ}[1]{{\color{blue}\bfseries [[#1]]}}
+\newcommand{\TP}[1]{{\color{red}\bfseries [[#1]]}}
+
+\newcommand{\NP}{\texttt{NumaPerf}}
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{%
+  \parbox{\textwidth}{\colorbox{gray}{\parbox{3.35in}{#1#2#3}}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\lstset{frame=none,xleftmargin=\fboxsep,xrightmargin=-\fboxsep}
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+\acmConference[PL'18]{ACM SIGPLAN Conference on Programming Languages}{January 01--03, 2018}{New York, NY, USA}
+\acmYear{2018}
+\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\startPage{1}
+
+\newtheorem{Definition}{\textbf{Definition}}
+
+\setcopyright{none}
+
+\begin{document}
+
+\title{Predictive and Comprehensive NUMA Profiling} 
+
+% Authors: Xin Zhao, Jin Zhou, Hui Guan, Xu Liu, Wei Wang, Tongping Liu
+
+\input{abstract}
+
+\maketitle
+
+\input{intro}
+\input{overview}
+\input{implement}
+\input{evaluation}
+\input{discussion}
+\input{relatedwork}
+\input{conclusion}
+
+{
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{tongping, refs}
+}
+
+\end{document}

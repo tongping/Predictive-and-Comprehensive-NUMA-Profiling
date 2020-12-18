@@ -1,0 +1,54 @@
+%\renewcommand{\arraystretch}{1.5}
+\begin{table*}[tp]
+\footnotesize
+%	\setlength{\tabcolsep}{0.3em}
+  \centering
+    \begin{tabular}{|l|r|r|r|r|r|r|r|r|}
+    \hline
+    \cline{1-7}
+    Benchmark&Issue&Strategy&New&Source Code&Improvement&Final Improvement\\ \hline
+    bodytrack&page level false sharing&interleaved pages&\checkmark&FlexImageStore.h:146&0&0 \\
+    &page\&cache level false sharing&interleaved pages\&pedding&\checkmark&ParticleFilter.h:205&0&0\\
+    &thread migration&round robin thread binding&\checkmark&&0&0\\ \hline
+    canneal&thread migration&round robin thread binding&\checkmark&&0&0\\ \hline
+    dedup&memory access imbalance&thread clustering&\checkmark&&0&0\\ 
+    &thread stage load imbalance&adjust thread numbers&\checkmark&&0&0\\ 
+    &thread migration&round robin thread binding&\checkmark&&0&0\\\hline
+    facesim&page level false sharing&interleaved pages&\checkmark&taskQ.c:219&0&0\\ 
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    ferret&page level false sharing&interleaved pages&\checkmark&dataset.c:224&0&0\\
+    &memory access imbalance&thread clustering&\checkmark&&0&0\\ 
+    &thread stage load imbalance&adjust thread numbers&\checkmark&&0&0\\ 
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    fluidanimate&page level false sharing&interleaved pages&\checkmark&pthreads.cpp:294&0&0\\
+    &page level false sharing&interleaved pages&\checkmark&pthreads.cpp:292&0&0\\
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    streamcluster&cache level false sharing&adjust CACHE\_LINE to 64 bytes&&streamcluster.cpp:984&0&0\\ 
+    &page level false sharing&duplicate over nodes&\checkmark&streamcluster.cpp:1845&0&0\\
+    &page level false sharing&interleaved pages&\checkmark&streamcluster.cpp:1906&0&0\\
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    vips&page level false sharing&interleaved pages&\checkmark&memory.c:156&0&0\\ 
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    x264&thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline
+    \hline  
+    lulesh&page level false sharing&memory partition&&lulesh.cc:543-545&0&0\\ 
+    &page level false sharing&memory partition&\checkmark&lulesh.cc:2251-2262&0&0\\
+    &page level false sharing&memory partition&&lulesh.cc:1029-1031&0&0\\
+    &page level false sharing&memory partition&\checkmark&lulesh.cc:1096&0&0\\
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline 
+    AMG2006&page level false sharing&interleaved pages&\checkmark&par\_relax.c:1631&0&0\\ 
+    &page level false sharing&block-wised interleaved&&par\_rap.c:1385,1286&0&0\\
+    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline 
+    UMT2013&thread migration&round robin thread binding&\checkmark&&0&0\\
+    \hline 
+    \end{tabular}
+  \caption{NUMA issues in PARSEC benchmarks. \label{tab:numa_issues}}
+\end{table*}
