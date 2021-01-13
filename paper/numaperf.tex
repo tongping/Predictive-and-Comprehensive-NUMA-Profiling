@@ -1,5 +1,68 @@
-\documentclass[sigplan,10pt,review,anonymous]{acmart}
-\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Template for USENIX papers.
+%
+% History:
+%
+% - TEMPLATE for Usenix papers, specifically to meet requirements of
+%   USENIX '05. originally a template for producing IEEE-format
+%   articles using LaTeX. written by Matthew Ward, CS Department,
+%   Worcester Polytechnic Institute. adapted by David Beazley for his
+%   excellent SWIG paper in Proceedings, Tcl 96. turned into a
+%   smartass generic template by De Clarke, with thanks to both the
+%   above pioneers. Use at your own risk. Complaints to /dev/null.
+%   Make it two column with no page numbering, default is 10 point.
+%
+% - Munged by Fred Douglis <douglis@research.att.com> 10/97 to
+%   separate the .sty file from the LaTeX source template, so that
+%   people can more easily include the .sty file into an existing
+%   document. Also changed to more closely follow the style guidelines
+%   as represented by the Word sample file.
+%
+% - Note that since 2010, USENIX does not require endnotes. If you
+%   want foot of page notes, don't include the endnotes package in the
+%   usepackage command, below.
+% - This version uses the latex2e styles, not the very ancient 2.09
+%   stuff.
+%
+% - Updated July 2018: Text block size changed from 6.5" to 7"
+%
+% - Updated Dec 2018 for ATC'19:
+%
+%   * Revised text to pass HotCRP's auto-formatting check, with
+%     hotcrp.settings.submission_form.body_font_size=10pt, and
+%     hotcrp.settings.submission_form.line_height=12pt
+%
+%   * Switched from \endnote-s to \footnote-s to match Usenix's policy.
+%
+%   * \section* => \begin{abstract} ... \end{abstract}
+%
+%   * Make template self-contained in terms of bibtex entires, to allow
+%     this file to be compiled. (And changing refs style to 'plain'.)
+%
+%   * Make template self-contained in terms of figures, to
+%     allow this file to be compiled. 
+%
+%   * Added packages for hyperref, embedding fonts, and improving
+%     appearance.
+%   
+%   * Removed outdated text.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \documentclass[letterpaper,twocolumn,10pt]{article}
+\documentclass[sigplan,screen]{acmart}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+    
+
+% to be able to draw some self-contained figs
+\usepackage{tikz}
+\usepackage{amsmath}
+
+% inlined bib file
+\usepackage{filecontents}
 
 \usepackage{times}
 \usepackage{datetime}
@@ -19,43 +82,47 @@
 \usepackage{enumitem}
 \usepackage{caption}
 
-
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,inner sep=1pt] (char) {\small #1};}}
 
 \newcommand{\todo}[1]{{\color{red}\bfseries [[#1]]}}
 \newcommand{\XZ}[1]{{\color{blue}\bfseries [[#1]]}}
 \newcommand{\TP}[1]{{\color{red}\bfseries [[#1]]}}
-
+\newcommand{\HG}[1]{{\color{magenta}\bfseries [[#1]]}}
 \newcommand{\NP}{\texttt{NumaPerf}}
 \newcommand{\specialcell}[2][c]{%
   \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 
-\DeclareCaptionFont{white}{\color{white}}
-\DeclareCaptionFormat{listing}{%
-  \parbox{\textwidth}{\colorbox{gray}{\parbox{3.35in}{#1#2#3}}}}
-\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
-\lstset{frame=none,xleftmargin=\fboxsep,xrightmargin=-\fboxsep}
 
-%% Conference information
-%% Supplied to authors by publisher for camera-ready submission;
-%% use defaults for review submission.
-\acmConference[PL'18]{ACM SIGPLAN Conference on Programming Languages}{January 01--03, 2018}{New York, NY, USA}
-\acmYear{2018}
-\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
-\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
-\startPage{1}
-
-\newtheorem{Definition}{\textbf{Definition}}
-
-\setcopyright{none}
 
 \begin{document}
+%-------------------------------------------------------------------------------
 
-\title{Predictive and Comprehensive NUMA Profiling} 
+%don't want date printed
+\date{}
+
+% make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+%\title{\Large \bf Formatting Submissions for a USENIX Conference:\\
+%  An (Incomplete) Example}
+\title{NUMAPerf: Predictive and Comprehensive NUMA Profiling}
+
+%for single author (just remove % characters)
+%\author{
+%{\rm Your N.\ Here}\\
+%Your Institution
+%\and
+%{\rm Second Name}\\
+%Second Institution
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+%} % end author
 
 % Authors: Xin Zhao, Jin Zhou, Hui Guan, Xu Liu, Wei Wang, Tongping Liu
 
+
+%-------------------------------------------------------------------------------
 \input{abstract}
 
 \maketitle
@@ -67,10 +134,13 @@
 \input{discussion}
 \input{relatedwork}
 \input{conclusion}
+%-------------------------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{refs,tongping}
 
-{
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{tongping, refs}
-}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  LocalWords:  endnotes includegraphics fread ptr nobj noindent
+%%  LocalWords:  pdflatex acks

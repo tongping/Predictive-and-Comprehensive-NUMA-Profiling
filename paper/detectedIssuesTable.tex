@@ -6,48 +6,49 @@
     \begin{tabular}{|l|r|r|r|r|r|r|r|r|}
     \hline
     \cline{1-7}
-    Benchmark&Issue&Strategy&New&Source Code&Improvement&Final Improvement\\ \hline
-    bodytrack&page level false sharing&interleaved pages&\checkmark&FlexImageStore.h:146&0&0 \\
-    &page\&cache level false sharing&interleaved pages\&pedding&\checkmark&ParticleFilter.h:205&0&0\\
-    &thread migration&round robin thread binding&\checkmark&&0&0\\ \hline
-    canneal&thread migration&round robin thread binding&\checkmark&&0&0\\ \hline
-    dedup&memory access imbalance&thread clustering&\checkmark&&0&0\\ 
-    &thread stage load imbalance&adjust thread numbers&\checkmark&&0&0\\ 
-    &thread migration&round robin thread binding&\checkmark&&0&0\\\hline
-    facesim&page level false sharing&interleaved pages&\checkmark&taskQ.c:219&0&0\\ 
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    Benchmark&Issue&Strategy&New&Source Code&RunningTime&Final RunningTime\\ \hline
+    bodytrack&page level false sharing&interleaved pages&\checkmark&FlexImageStore.h:146&98.18\%& \\
+    &page\&cache level false sharing&interleaved pages\&pedding&\checkmark&ParticleFilter.h:205&98.60\%&\\
+    &thread migration&round robin thread binding&\checkmark&&98.09\%&98.59\%\\ \hline
+    canneal&thread migration&round robin thread binding&\checkmark&&99.17\%&99.17\%\\ \hline
+    dedup&memory access imbalance&thread clustering&\checkmark&&90.27\%&\\ 
+    &thread stage load imbalance&adjust thread numbers&\checkmark&&95.77\%&\\ 
+    &thread migration&round robin thread binding&\checkmark&&94.08\%&87.59\%\\\hline
+    facesim&page level false sharing&interleaved pages&\checkmark&taskQ.c:219&100.00\%&\\ 
+    &thread migration&round robin thread binding&\checkmark&&95.20\%&96.31\%\\
     \hline
-    ferret&page level false sharing&interleaved pages&\checkmark&dataset.c:224&0&0\\
-    &memory access imbalance&thread clustering&\checkmark&&0&0\\ 
-    &thread stage load imbalance&adjust thread numbers&\checkmark&&0&0\\ 
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    ferret&page level false sharing&interleaved pages&\checkmark&dataset.c:224&94.98\%&\\
+    &memory access imbalance&thread clustering&\checkmark&&98.23\%&\\ 
+    &thread stage load imbalance&adjust thread numbers&\checkmark&&48.07\%&\\ 
+    &thread migration&round robin thread binding&\checkmark&&98.07\%&47.30\%\\
     \hline
-    fluidanimate&page level false sharing&interleaved pages&\checkmark&pthreads.cpp:294&0&0\\
-    &page level false sharing&interleaved pages&\checkmark&pthreads.cpp:292&0&0\\
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    fluidanimate&page level false sharing&interleaved pages&\checkmark&pthreads.cpp:294&79.02\%&\\
+    &page level false sharing&interleaved pages&\checkmark&pthreads.cpp:292&33.13\%&\\
+    &thread migration&round robin thread binding&\checkmark&&35.36\%&33.42\%\\
     \hline
-    streamcluster&cache level false sharing&adjust CACHE\_LINE to 64 bytes&&streamcluster.cpp:984&0&0\\ 
-    &page level false sharing&duplicate over nodes&\checkmark&streamcluster.cpp:1845&0&0\\
-    &page level false sharing&interleaved pages&\checkmark&streamcluster.cpp:1906&0&0\\
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    streamcluster&cache level false sharing&adjust CACHE\_LINE to 64 bytes&&streamcluster.cpp:984&95.00\%&\\ 
+    &page level false sharing&duplicate over nodes&\checkmark&streamcluster.cpp:1845&62.90\%&\\
+    &page level false sharing&interleaved pages&\checkmark&streamcluster.cpp:1906&98.00\%&\\
+    &thread migration&round robin thread binding&\checkmark&&75.73\%&59.77\%\\
     \hline
-    vips&page level false sharing&interleaved pages&\checkmark&memory.c:156&0&0\\ 
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    vips&page level false sharing&interleaved pages&\checkmark&memory.c:156&96.32\%&\\ 
+    &thread migration&round robin thread binding&\checkmark&&99.12\%&96.47\%\\
     \hline
-    x264&thread migration&round robin thread binding&\checkmark&&0&0\\
+    x264&thread migration&round robin thread binding&\checkmark&&91.58\%&91.58\%\\
     \hline
     \hline  
-    lulesh&page level false sharing&memory partition&&lulesh.cc:543-545&0&0\\ 
-    &page level false sharing&memory partition&\checkmark&lulesh.cc:2251-2262&0&0\\
-    &page level false sharing&memory partition&&lulesh.cc:1029-1031&0&0\\
-    &page level false sharing&memory partition&\checkmark&lulesh.cc:1096&0&0\\
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    lulesh&page level false sharing&memory partition&&lulesh.cc:543-545&24.54\%&\\ 
+    &page level false sharing&memory partition&\checkmark&lulesh.cc:2251-2262&28.42\%&\\
+    &page level false sharing&memory partition&&lulesh.cc:1029-1031&26.25\%&\\
+    &page level false sharing&memory partition&\checkmark&lulesh.cc:1096&25.56\%&\\
+    &thread migration&round robin thread binding&\checkmark&&28.51\%&23.38\%\\
     \hline 
-    AMG2006&page level false sharing&interleaved pages&\checkmark&par\_relax.c:1631&0&0\\ 
-    &page level false sharing&block-wised interleaved&&par\_rap.c:1385,1286&0&0\\
-    &thread migration&round robin thread binding&\checkmark&&0&0\\
+    AMG2006&page level false sharing&interleaved pages&\checkmark&par\_relax.c:1631&90.67\%&\\ 
+    &page level false sharing&block-wised interleaved&&par\_rap.c:1385&93.72\%&\\
+    &page level false sharing&block-wised interleaved&&par\_rap.c:1386&85.87\%&\\
+    &thread migration&round robin thread binding&\checkmark&&60.11\%&52.38\%\\
     \hline 
-    UMT2013&thread migration&round robin thread binding&\checkmark&&0&0\\
+    UMT2013&thread migration&round robin thread binding&\checkmark&&76.32\%&76.32\%\\
     \hline 
     \end{tabular}
   \caption{NUMA issues in PARSEC benchmarks. \label{tab:numa_issues}}

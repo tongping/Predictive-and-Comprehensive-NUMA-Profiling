@@ -2328,6 +2328,13 @@ publisher = {USENIX},
  keywords = {NUMA, memory access pattern, performance optimization, profiler, threads},
 } 
 
+@misc{perf,
+  title = {Linux kernel profiling with perf},
+  author = {Stephane Eranian and Eric Gouriou and Tipp Moseley and Willem de Bruijn},
+  howpublished = "\url{https://perf.wiki.kernel.org/index.php/Tutorial}",
+  year = {2015},
+}
+
 @INPROCEEDINGS{Memphis,
 author={C. McCurdy and J. Vetter},
 booktitle={2010 IEEE International Symposium on Performance Analysis of Systems Software (ISPASS)},
@@ -2337,6 +2344,17 @@ pages={87-96},
 keywords={multiprocessing programs;performance evaluation;Memphis;NUMA related performance problems;data-centric toolset;hardware performance counters;instruction based sampling;micro-processor design;multi-core platforms;non-uniform memory access;problematic memory accesses;Automatic control;CADCAM;Computer aided manufacturing;Counting circuits;Delay;Hardware;Laboratories;Programming profession;Sampling methods;Sockets},
 doi={10.1109/ISPASS.2010.5452060},
 month={March},}
+
+@inproceedings{DBLP:conf/sigplan/GrahamKM82,
+  author    = {Susan L. Graham and Peter B. Kessler and Marshall K. McKusick},
+  title     = {gprof: a Call Graph Execution Profiler},
+  booktitle = {SIGPLAN Symposium on Compiler Construction},
+  year      = {1982},
+  pages     = {120-126},
+  ee        = {http://doi.acm.org/10.1145/800230.806987},
+  crossref  = {DBLP:conf/sigplan/1982},
+  bibsource = {DBLP, http://dblp.uni-trier.de}
+}
 
 @inproceedings{MACPO,
  author = {Rane, Ashay and Browne, James},
@@ -2556,6 +2574,130 @@ month={March},}
   Title = {A Data-centric Profiler for Parallel Programs},
   Year = {2013},
   address = {Denver, CO, USA}}
+
+@inproceedings{helm2019perfmemplus,
+  title={PerfMemPlus: A Tool for Automatic Discovery of Memory Performance Problems},
+  author={Helm, Christian and Taura, Kenjiro},
+  booktitle={International Conference on High Performance Computing},
+  pages={209--226},
+  year={2019},
+  organization={Springer}
+}
+
+@INPROCEEDINGS{7847070,
+
+  author={L. {Zhu} and H. {Jin} and X. {Liao}},
+
+  booktitle={2016 IEEE Trustcom/BigDataSE/ISPA}, 
+
+  title={A Tool to Detect Performance Problems of Multi-threaded Programs on NUMA Systems}, 
+
+  year={2016},
+
+  volume={},
+
+  number={},
+
+  pages={1145-1152},
+
+  doi={10.1109/TrustCom.2016.0187}}
+
+
+@inproceedings{DBLP:conf/ppopp/ChabbiWL18,
+  author    = {Milind Chabbi and
+               Shasha Wen and
+               Xu Liu},
+  editor    = {Andreas Krall and
+               Thomas R. Gross},
+  title     = {Featherlight on-the-fly false-sharing detection},
+  booktitle = {Proceedings of the 23rd {ACM} {SIGPLAN} Symposium on Principles and
+               Practice of Parallel Programming, PPoPP 2018, Vienna, Austria, February
+               24-28, 2018},
+  pages     = {152--167},
+  publisher = {{ACM}},
+  year      = {2018},
+  url       = {https://doi.org/10.1145/3178487.3178499},
+  doi       = {10.1145/3178487.3178499},
+  timestamp = {Tue, 06 Nov 2018 16:57:27 +0100},
+  biburl    = {https://dblp.org/rec/conf/ppopp/ChabbiWL18.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+
+@inproceedings{RTHMS,
+author = {Peng, Ivy Bo and Gioiosa, Roberto and Kestor, Gokcen and Cicotti, Pietro and Laure, Erwin and Markidis, Stefano},
+title = {RTHMS: A Tool for Data Placement on Hybrid Memory System},
+year = {2017},
+isbn = {9781450350440},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3092255.3092273},
+doi = {10.1145/3092255.3092273},
+booktitle = {Proceedings of the 2017 ACM SIGPLAN International Symposium on Memory Management},
+pages = {82–91},
+numpages = {10},
+keywords = {heterogeneous memory systems, performance metrics, data placement},
+location = {Barcelona, Spain},
+series = {ISMM 2017}
+}
+@article{diener2015characterizing,
+  title={Characterizing communication and page usage of parallel applications for thread and data mapping},
+  author={Diener, Matthias and Cruz, Eduardo HM and Pilla, La{\'e}rcio L and Dupros, Fabrice and Navaux, Philippe OA},
+  journal={Performance Evaluation},
+  volume={88},
+  pages={18--36},
+  year={2015},
+  publisher={Elsevier}
+}
+
+@inproceedings{TABARNAC,
+author = {Beniamine, David and Diener, Matthias and Huard, Guillaume and Navaux, Philippe O. A.},
+title = {TABARNAC: Visualizing and Resolving Memory Access Issues on NUMA Architectures},
+year = {2015},
+isbn = {9781450340137},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi-org.silk.library.umass.edu/10.1145/2835238.2835239},
+doi = {10.1145/2835238.2835239},
+booktitle = {Proceedings of the 2nd Workshop on Visual Performance Analysis},
+articleno = {1},
+numpages = {9},
+location = {Austin, Texas},
+series = {VPA '15}
+}
+@inproceedings{NumaMMA,
+author = {Trahay, Fran\c{c}ois and Selva, Manuel and Morel, Lionel and Marquet, Kevin},
+title = {NumaMMA: NUMA MeMory Analyzer},
+year = {2018},
+isbn = {9781450365109},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3225058.3225094},
+doi = {10.1145/3225058.3225094},
+booktitle = {Proceedings of the 47th International Conference on Parallel Processing},
+articleno = {19},
+numpages = {10},
+keywords = {NUMA architectures, Data and threads placement, Memory sampling, Performance analysis},
+location = {Eugene, OR, USA},
+series = {ICPP 2018}
+}
+@INPROCEEDINGS{7818331,
+
+  author={M. {Selva} and L. {Morel} and K. {Marquet}},
+
+  booktitle={2016 International Conference on Embedded Computer Systems: Architectures, Modeling and Simulation (SAMOS)}, 
+
+  title={numap: A portable library for low-level memory profiling}, 
+
+  year={2016},
+
+  volume={},
+
+  number={},
+
+  pages={55-62},
+
+  doi={10.1109/SAMOS.2016.7818331}}
 
 @misc{Intel:VTune,
   Author = {{Intel Corporation}},

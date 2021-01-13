@@ -3,11 +3,8 @@
 
 \paragraph{NUMA Profiling Tools} 
 
-MemProf utilizes IBS performance counter to sample memory accesses, and then ~\cite{Lachaize:2012:MMP:2342821.2342826}
 
-~\cite{Bolosky:1991:NPR:106972.106994} 
-
-proposes to model NUMA performance issues based on the collected trace. It only focuses on four memory-latency parameters: g, r, G and R, and focuses on the local/global/remote NUMA architecture, which is different from local/remote architecture of modern hardware. 
+ It only focuses on four memory-latency parameters: g, r, G and R, and focuses on the local/global/remote NUMA architecture, which is different from local/remote architecture of modern hardware. 
 
 g is the latency of accessing a single word of  global memory. G is to move apage from global to a local memory or vice versa. \texttt{r} is to access a single word of remote memory, while  $R$ is go move a page from one local memory to another. 
 
@@ -15,17 +12,37 @@ s.
 But the common is to utilize a record of the data references made by a parallel program to derive the cost analysis. 
 We have different focuses with ~\cite{Bolosky:1991:NPR:106972.106994}, which is to model important aspect of real-world behavior, and then derive which NUMA placement policy can achieve better performance. Typically, this paper utilizes the offline analysis.  
 
-Xu's work\cite{10.1145/2692916.2555271} is sampling based,and for each memory access sampling event,it identifies whether it is a remote memory access or not according to the NUMA node id and the location of the target memory. For remote access, they will further get the memory access latency which is supported by hardware sampling like IBS and PEBS-LL.Overall, they can identify NUMA issues if the average NUMA remote memory access latency per instruction is exceeding a threshold. Besides, they also provide memory access pattern across threads, which could be used to guide how to distribute memory to eliminate remote latency for users. However, the sampling method missed lots of information and potential NUMA issues which can be demonstrated based on our experiments. Further more, it does not support cache level contention problems and also thread based problems, so that users can get limited help information about the reasons of the detected issues and how to fix them. 
+\paragraph{Simulation-Based Approaches:}
+ Bolosky et al. propose to model NUMA performance issues based on the collected trace, and then derive a better NUMA placement policy~\cite{Bolosky:1991:NPR:106972.106994}.
+ NUMAgrind employs binary instrumentation to collect memory traces, and simulates cache activities and page affinity~\cite{NUMAGrind}. MACPO reduces the overhead of collecting memory traces and analysis by focusing on code segments that have known performance bottlenecks~\cite{MACPO}. That is, it typically requires programmer inputs to reduce its overhead.  Simulation-based approaches could be utilized for any architecture, which are very useful. However, they are typically extremely slow, with thousands of performance slowdown, which makes them un-affordable even for development phases. Further, they still require to evaluate the performance impact for a given  architecture, which will significantly limit its usage. 
 
-For MemProf\cite{valat:2018:numaprof}, it used binary instrumentation methods provided by Pin and it also focus on remote and local memory access. However, how they differentiate remote and local access is too week.They marked an access as remote access only if both threads and memories are explicitly binded by users and they happened to be pined to different nodes, unless they are counted as unpinned access.This mechanism is useless for the detection, since in most cases people do not do the binding explicitly by themselves.Further more, they only provide code centric metrics, which is helpless about where the memory is coming from and how to eliminate the detected issues.
+\paragraph{Fine-Grained Approaches:} 
+TABARNAC focuses on the visualization of memory access behaviors of different data structures~\cite{TABARNAC}. It uses PIN to collect memory accesses of every thread on the page level, and then relates with data structure information together to visualize the usage of data structures. It introduces the runtime overhead between $10\times$ and $60\times$, in addition to its offline overhead. Diener et al. propose to instrument memory accesses with PIN dynamically, and then characterize distribution of accesses of different NUMA nodes~\cite{diener2015characterizing}. The paper does not present the detailed overhead. 
+NumaProf also uses the binary instrumentation  (i.e., PIN) to collect and identify local and remote memory accesses~\cite{valat:2018:numaprof}. \todo{Why NumaProf does not perform as good as \NP{}??? Are they helpful to identify the issues?} NumaProf also relies on a specific thread binding to detect remote accesses, which shares the same shortcoming as other existing work~\cite{XuNuma, 7847070}.   
 
-Macpo(simulation), 
-NumaPerf
+%numap provides a cross-architecture APIs that enables to easily build profiling  tools~\cite{7818331}. 
+% However, how they differentiate remote and local access is too week.They marked an access as remote access only if both threads and memories are explicitly binded by users and they happened to be pined to different nodes, unless they are counted as unpinned access.This mechanism is useless for the detection, since in most cases people do not do the binding explicitly by themselves.Further more, they only provide code centric metrics, which is helpless about where the memory is coming from and how to eliminate the detected issues.
 
 
-\paragraph{False-Sharing Related Tools} 
-Predator\cite{Predator} also used emulation based approach to detect false problems, which is very similar with NumaPerf. By emulate cache line, they could collection some information like when did a cache invalidation happened, how the cache line is shared between threads:true sharing or false sharing, and also how serious the sharing is. But this work is mainly focus on false sharing issues detection, which did not take NUMA perspectives into consider.
 
-\paragraph{Compiler-assisted Instrumentation}
+\paragraph{Coarse-Grained Approaches:}
+Many tools employ hardware Performance Monitoring Units (PMU) to identify NUMA-related performance issues, such as VTune~\cite{Intel:VTune}, Memphis~\cite{Memphis}, MemProf~\cite{Lachaize:2012:MMP:2342821.2342826}, Xu et al.~\cite{XuNuma}, NumaMMA~\cite{NumaMMA}, and LaProf~\cite{7847070}, where their difference are further described in the following. 
+Both VTune~\cite{Intel:VTune} and Memphis~\cite{Memphis} only detects NUMA-performance issues on statically-linked variables.  
+MemProf proposes the employment of hardware Performance Monitoring Units (PMU) to identify NUMA-related performance issues~\cite{Lachaize:2012:MMP:2342821.2342826}, with the focus on remote accesses. It constructs data flow between threads and objects to help understand NUMA performance issues. One drawback of MemProf is that it requires an additional kernel module that may prevent people of using it. Similarly, Xu et al. also employ PMU to detect NUMA performance issues~\cite{XuNuma}, but without the change of the kernel. It further proposes a new metric, the NUMA latency per instruction, to evaluate the seriousness of NUMA issues. This tool has a drawback that it statically binds every thread to each node, which may miss some NUMA issues due to its static binding. 
+NumaMMA also collects traces with PMU hardware, but focuses on the visualization of memory accesses ~\cite{NumaMMA}. LaProf focuses on multiple issues that may cause performances issues in NUMA architecture~\cite{7847070}, including data sharing, shared resource contention, and remote imbalance. LaProf has the same shortcoming by binding every thread statically.  Overall, these sampling-based approaches although imposes much lower overhead, making them applicable even for the production environment, they cannot detect all NUMA performance issues especially when most of them only focus on remote accesses. In contrast, \NP{} aims to detect performance issues inside  development phases, avoiding any additional runtime overhead. Also, \NP{} focuses more aspects with a predictive approach, not just limited to remote accesses in the current hardware. Our evaluation results confirm \NP{}'s comprehensiveness and effectiveness. 
+
+%Xu's work is sampling based,and for each memory access sampling event,it identifies whether it is a remote memory access or not according to the NUMA node id and the location of the target memory. For remote access, they will further get the memory access latency which is supported by hardware sampling like IBS and PEBS-LL.Overall, they can identify NUMA issues if the average NUMA remote memory access latency per instruction is exceeding a threshold. Besides, they also provide memory access pattern across threads, which could be used to guide how to distribute memory to eliminate remote latency for users. However, the sampling method missed lots of information and potential NUMA issues which can be demonstrated based on our experiments. Further more, it does not support cache level contention problems and also thread based problems, so that users can get limited help information about the reasons of the detected issues and how to fix them. 
+%Some of this fact are caused by their implementation. For instance, in order to reduce the overhead of identifying the thread location, some tools bind every thread to a specific node that allows to infer the thread node using a thread-private variables~\cite{XuNuma}, instead of employing a system call.  However, they may miss some issues due to their binding. 
+
+
+
+
+\paragraph{Other Related Tools}
+RTHMS also employs PIN to collect memory traces, and then assigns a score to each object-to-memory based on its algorithms~\cite{RTHMS}. It aims for identifying the peformance issues for the hybrid DRAM-HBM architecture, but not the NUMA architecture, and has a higher overhead than \NP{}. Some tools focus on the detection of false/true sharing issues~\cite{Predator, Cheetah, DBLP:conf/ppopp/ChabbiWL18, helm2019perfmemplus}, but skipping the issues caused by other remote accesses. 
+
+%Predator\cite{Predator} also used emulation based approach to detect false problems, which is very similar with NumaPerf. By emulate cache line, they could collection some information like when did a cache invalidation happened, how the cache line is shared between threads:true sharing or false sharing, and also how serious the sharing is. But this work is mainly focus on false sharing issues detection, which did not take NUMA perspectives into consider.
+
+
+%\paragraph{Compiler-assisted Instrumentation}
 
 
