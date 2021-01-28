@@ -1,7 +1,7 @@
 \section{Experimental Evaluation}
 \label{sec:evaluation}
 
-\todo{Can we differentiate the reason of remote accesses. First, we should differentiate false and true sharing. For true sharing, migratory (producer-consumer), simultaneously-shared, or read-mostly. }
+\todo{Can we differentiate the reason of remote accesses. First, we should differentiate false and true sharing. For true sharing, we should at least differentiate read-mostly and others, since read-mostly are easier to achieve performance speedup. }
 \subsection{Effectiveness}
 We will evaluate this work against two existing work:
 
@@ -12,6 +12,14 @@ We will evaluate this work against two existing work:
 
 \input{detectedIssuesTable}
 
+\subsection{Case Studies}
+\label{sec:casestudies}
+
+\subsubsection{Fixing Excessive Number of Remote Accesses}
+
+\subsubsection{Fixing Thread Migration} 
+
+\subsubsection{Fixing Load Imbalance}
 \subsection{Performance Overhead}
 
 \subsection{Memory Overhead}

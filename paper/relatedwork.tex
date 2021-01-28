@@ -1,24 +1,21 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{NUMA Profiling Tools} 
+This section discusses NUMA-profiling tools at first, and then discusses other relevant tools and systems.
+\subsection{NUMA Profiling Tools} 
 
 
- It only focuses on four memory-latency parameters: g, r, G and R, and focuses on the local/global/remote NUMA architecture, which is different from local/remote architecture of modern hardware. 
-
-g is the latency of accessing a single word of  global memory. G is to move apage from global to a local memory or vice versa. \texttt{r} is to access a single word of remote memory, while  $R$ is go move a page from one local memory to another. 
-
-s. 
-But the common is to utilize a record of the data references made by a parallel program to derive the cost analysis. 
-We have different focuses with ~\cite{Bolosky:1991:NPR:106972.106994}, which is to model important aspect of real-world behavior, and then derive which NUMA placement policy can achieve better performance. Typically, this paper utilizes the offline analysis.  
+%It only focuses on four memory-latency parameters: g, r, G and R, and focuses on the local/global/remote NUMA architecture, which is different from local/remote architecture of modern hardware. g is the latency of accessing a single word of  global memory. G is to move apage from global to a local memory or vice versa. \texttt{r} is to access a single word of remote memory, while  $R$ is go move a page from one local memory to another.the common is to utilize a record of the data references made by a parallel program to derive the cost analysis. We have different focuses with ~\cite{Bolosky:1991:NPR:106972.106994}, which is to model important aspect of real-world behavior, and then derive which NUMA placement policy can achieve better performance. Typically, this paper utilizes the offline analysis.  
 
 \paragraph{Simulation-Based Approaches:}
  Bolosky et al. propose to model NUMA performance issues based on the collected trace, and then derive a better NUMA placement policy~\cite{Bolosky:1991:NPR:106972.106994}.
- NUMAgrind employs binary instrumentation to collect memory traces, and simulates cache activities and page affinity~\cite{NUMAGrind}. MACPO reduces the overhead of collecting memory traces and analysis by focusing on code segments that have known performance bottlenecks~\cite{MACPO}. That is, it typically requires programmer inputs to reduce its overhead.  Simulation-based approaches could be utilized for any architecture, which are very useful. However, they are typically extremely slow, with thousands of performance slowdown, which makes them un-affordable even for development phases. Further, they still require to evaluate the performance impact for a given  architecture, which will significantly limit its usage. 
+ NUMAgrind employs binary instrumentation to collect memory traces, and simulates cache activities and page affinity~\cite{NUMAGrind}. MACPO reduces the overhead of collecting memory traces and analysis by focusing on code segments that have known performance bottlenecks~\cite{MACPO}. That is, it typically requires programmer inputs to reduce its overhead.  Simulation-based approaches could be utilized for any architecture, which are very useful. However, they are typically extremely slow, with thousands of performance slowdown, which makes them un-affordable even for development phases. Further, they still require to evaluate the performance impact for a given architecture, which will significantly limit its usage. \NP{} utilizes a measurement based approach, which avoids significant performance overhead of simulation-based approaches. 
 
 \paragraph{Fine-Grained Approaches:} 
 TABARNAC focuses on the visualization of memory access behaviors of different data structures~\cite{TABARNAC}. It uses PIN to collect memory accesses of every thread on the page level, and then relates with data structure information together to visualize the usage of data structures. It introduces the runtime overhead between $10\times$ and $60\times$, in addition to its offline overhead. Diener et al. propose to instrument memory accesses with PIN dynamically, and then characterize distribution of accesses of different NUMA nodes~\cite{diener2015characterizing}. The paper does not present the detailed overhead. 
-NumaProf also uses the binary instrumentation  (i.e., PIN) to collect and identify local and remote memory accesses~\cite{valat:2018:numaprof}. \todo{Why NumaProf does not perform as good as \NP{}??? Are they helpful to identify the issues?} NumaProf also relies on a specific thread binding to detect remote accesses, which shares the same shortcoming as other existing work~\cite{XuNuma, 7847070}.   
+NumaProf also uses the binary instrumentation  (i.e., PIN) to collect and identify local and remote memory accesses~\cite{valat:2018:numaprof}. 
+%\todo{Why NumaProf does not perform as good as \NP{}??? Are they helpful to identify the issues?} 
+NumaProf also relies on a specific thread binding to detect remote accesses, which shares the same shortcoming as other existing work~\cite{XuNuma, 7847070}. It also shares the same issues with other tools, which only focuses on remote accesses while omitting other issues such as cache coherence issues and imbalance issues. \NP{} also utilizes fine-grained measurement, which covers more issues that may cause performance issues in any NUMA architecture.    
 
 %numap provides a cross-architecture APIs that enables to easily build profiling  tools~\cite{7818331}. 
 % However, how they differentiate remote and local access is too week.They marked an access as remote access only if both threads and memories are explicitly binded by users and they happened to be pined to different nodes, unless they are counted as unpinned access.This mechanism is useless for the detection, since in most cases people do not do the binding explicitly by themselves.Further more, they only provide code centric metrics, which is helpless about where the memory is coming from and how to eliminate the detected issues.
@@ -37,8 +34,10 @@ NumaMMA also collects traces with PMU hardware, but focuses on the visualization
 
 
 
-\paragraph{Other Related Tools}
+\subsection{Other Related Tools}
 RTHMS also employs PIN to collect memory traces, and then assigns a score to each object-to-memory based on its algorithms~\cite{RTHMS}. It aims for identifying the peformance issues for the hybrid DRAM-HBM architecture, but not the NUMA architecture, and has a higher overhead than \NP{}. Some tools focus on the detection of false/true sharing issues~\cite{Predator, Cheetah, DBLP:conf/ppopp/ChabbiWL18, helm2019perfmemplus}, but skipping the issues caused by other remote accesses. 
+
+SyncPerf also predicts the optimal thread assignment~\cite{SyncPerf}. SyncPerf aims to achieve the optimal thread assignment by balancing the waiting time of each types of threads. In contrast, \NP{} suggests the optimal thread assignment based  the number of accesses of each thread, which indicates the actual workload. 
 
 %Predator\cite{Predator} also used emulation based approach to detect false problems, which is very similar with NumaPerf. By emulate cache line, they could collection some information like when did a cache invalidation happened, how the cache line is shared between threads:true sharing or false sharing, and also how serious the sharing is. But this work is mainly focus on false sharing issues detection, which did not take NUMA perspectives into consider.
 

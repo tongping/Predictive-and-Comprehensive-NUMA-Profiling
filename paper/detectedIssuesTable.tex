@@ -1,55 +1,70 @@
 %\renewcommand{\arraystretch}{1.5}
 \begin{table*}[tp]
-\footnotesize
-%	\setlength{\tabcolsep}{0.3em}
-  \centering
-    \begin{tabular}{|l|r|r|r|r|r|r|r|r|}
+%\footnotesize
+% 	\setlength{\tabcolsep}{0.3em}
+\centering
+\begin{tabular}{|l|c|l|r|l|r|r|c|c|}
     \hline
-    \cline{1-7}
-    Benchmark&Issue&Strategy&New&Source Code&RunningTime&Final RunningTime\\ \hline
-    bodytrack&page level false sharing&interleaved pages&\checkmark&FlexImageStore.h:146&98.18\%& \\
-    &page\&cache level false sharing&interleaved pages\&pedding&\checkmark&ParticleFilter.h:205&98.60\%&\\
-    &thread migration&round robin thread binding&\checkmark&&98.09\%&98.59\%\\ \hline
-    canneal&thread migration&round robin thread binding&\checkmark&&99.17\%&99.17\%\\ \hline
-    dedup&memory access imbalance&thread clustering&\checkmark&&90.27\%&\\ 
-    &thread stage load imbalance&adjust thread numbers&\checkmark&&95.77\%&\\ 
-    &thread migration&round robin thread binding&\checkmark&&94.08\%&87.59\%\\\hline
-    facesim&page level false sharing&interleaved pages&\checkmark&taskQ.c:219&100.00\%&\\ 
-    &thread migration&round robin thread binding&\checkmark&&95.20\%&96.31\%\\
-    \hline
-    ferret&page level false sharing&interleaved pages&\checkmark&dataset.c:224&94.98\%&\\
-    &memory access imbalance&thread clustering&\checkmark&&98.23\%&\\ 
-    &thread stage load imbalance&adjust thread numbers&\checkmark&&48.07\%&\\ 
-    &thread migration&round robin thread binding&\checkmark&&98.07\%&47.30\%\\
-    \hline
-    fluidanimate&page level false sharing&interleaved pages&\checkmark&pthreads.cpp:294&79.02\%&\\
-    &page level false sharing&interleaved pages&\checkmark&pthreads.cpp:292&33.13\%&\\
-    &thread migration&round robin thread binding&\checkmark&&35.36\%&33.42\%\\
-    \hline
-    streamcluster&cache level false sharing&adjust CACHE\_LINE to 64 bytes&&streamcluster.cpp:984&95.00\%&\\ 
-    &page level false sharing&duplicate over nodes&\checkmark&streamcluster.cpp:1845&62.90\%&\\
-    &page level false sharing&interleaved pages&\checkmark&streamcluster.cpp:1906&98.00\%&\\
-    &thread migration&round robin thread binding&\checkmark&&75.73\%&59.77\%\\
-    \hline
-    vips&page level false sharing&interleaved pages&\checkmark&memory.c:156&96.32\%&\\ 
-    &thread migration&round robin thread binding&\checkmark&&99.12\%&96.47\%\\
-    \hline
-    x264&thread migration&round robin thread binding&\checkmark&&91.58\%&91.58\%\\
-    \hline
-    \hline  
-    lulesh&page level false sharing&memory partition&&lulesh.cc:543-545&24.54\%&\\ 
-    &page level false sharing&memory partition&\checkmark&lulesh.cc:2251-2262&28.42\%&\\
-    &page level false sharing&memory partition&&lulesh.cc:1029-1031&26.25\%&\\
-    &page level false sharing&memory partition&\checkmark&lulesh.cc:1096&25.56\%&\\
-    &thread migration&round robin thread binding&\checkmark&&28.51\%&23.38\%\\
+    \cline{1-8}
+    \multirow{2}{*}{Application}& \multirow{2}{*}{Improve}& \multicolumn{5}{c}{Specific Issues}&\\
+    \cline{3-8}
+    & & Issue & Score & \multicolumn{1}{|c|}{Allocation Site} & \multicolumn{1}{|c|}{Fix Strategy} & Improve & New \\ 
     \hline 
-    AMG2006&page level false sharing&interleaved pages&\checkmark&par\_relax.c:1631&90.67\%&\\ 
-    &page level false sharing&block-wised interleaved&&par\_rap.c:1385&93.72\%&\\
-    &page level false sharing&block-wised interleaved&&par\_rap.c:1386&85.87\%&\\
-    &thread migration&round robin thread binding&\checkmark&&60.11\%&52.38\%\\
+    % Application & Issue (score) & Strategy&New&Source Code&RunningTime&Final RunningTime\\ \hline
+    
+    \multirow{2}{*}{AMG2006}&\multirow{2}{*}{160\%}&\PS&3612&par\_rap.c:1385&\BI&160\%& \\
+    \cline{3-8}
+    
+    &&\TM&230&&\TB&132\%&\checkmark \\ \hline
+
+    \multirow{7}{*}{lulesh}&\multirow{7}{*}{594\%}&\PS&1978&lulesh.cc:543-545&\BI&429\%& \\
+    \cline{3-8}
+
+    &&\PS&1611&lulesh.cc:1029-1034&\BI&504\%&  \\
+    \cline{3-8}
+    
+    &&\PS&1283&\multirow{2}{*}{lulesh.cc:2251-2264}&\BI&\multirow{2}{*}{416\%}& \\
+    &&\FS&174&& + \PAD && \checkmark\\
+    \cline{3-8}
+    
+    &&\PS&1316&\multirow{2}{*}{lulesh.cc:2089}&\BI&\multirow{2}{*}{391\%}& \\
+    &&\FS&170&& + \PAD && \checkmark\\
+    \cline{3-8}
+    
+    &&\TM&153&&\TB&382\%&\checkmark \\ \hline
+    
+    UMT2013&131\%&\TM&253&&\TB&131\%&\checkmark \\
     \hline 
-    UMT2013&thread migration&round robin thread binding&\checkmark&&76.32\%&76.32\%\\
-    \hline 
+    \hline
+    
+    bodytrack&105\%&\TM&13646&&\TB&105\% &\checkmark \\ \hline
+    
+    dedup&106\%&\TI&&& adjust threads assignment &106\%&\checkmark \\ \hline
+    
+    facesim&105\%&\TM&399&&\TB&105\%&\checkmark \\ \hline
+    
+    ferret&208\%&\TI&&& adjust threads assignment &208\%&\checkmark \\ \hline
+ 
+    \multirow{5}{*}{fluidanimate}&\multirow{5}{*}{429\%}&\PS&154&\multirow{2}{*}{pthreads.cpp:294}&\PI&\multirow{2}{*}{150\%}& \\
+    &&\FS&223&& + \PAD&&\checkmark \\
+    \cline{3-8}
+    
+    &&\PS&45994&\multirow{2}{*}{pthreads.cpp:292}& \multirow{2}{*}{\PI} &\multirow{2}{*}{340\%}& \\
+    &&\TS&19545&&&&\checkmark \\
+    \cline{3-8}
+     
+    &&\TM&812&&\TB&418\%&\checkmark \\ \hline
+    
+    \multirow{4}{*}{streamcluster}&\multirow{4}{*}{167\%}&\PS&405&\multirow{2}{*}{streamcluster.cpp:984}&\PI&\multirow{2}{*}{105\%}& \\
+    &&\FS&368&& + \PAD&& \checkmark\\
+    \cline{3-8}
+     
+    &&\PS&6397&streamcluster.cpp:1845&\DUP&158\%& \\
+    \cline{3-8}
+     
+    &&\TM&252&&\TB&132\%&\checkmark \\ \hline
     \end{tabular}
-  \caption{NUMA issues in PARSEC benchmarks. \label{tab:numa_issues}}
+  \caption{Detected NUMA performance issues of \NP{}, where it detects multiple performance bugs that cannot be detected using existing NUMA profilers (with a check mark in the last column).}
+  \label{tab:numa_issues}
 \end{table*}
+\todo{Differentiate the performance impact caused by false sharing and page sharing}
