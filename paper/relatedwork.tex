@@ -37,7 +37,7 @@ NumaMMA also collects traces with PMU hardware, but focuses on the visualization
 \subsection{Other Related Tools}
 RTHMS also employs PIN to collect memory traces, and then assigns a score to each object-to-memory based on its algorithms~\cite{RTHMS}. It aims for identifying the peformance issues for the hybrid DRAM-HBM architecture, but not the NUMA architecture, and has a higher overhead than \NP{}. Some tools focus on the detection of false/true sharing issues~\cite{Predator, Cheetah, DBLP:conf/ppopp/ChabbiWL18, helm2019perfmemplus}, but skipping the issues caused by other remote accesses. 
 
-SyncPerf also predicts the optimal thread assignment~\cite{SyncPerf}. SyncPerf aims to achieve the optimal thread assignment by balancing the waiting time of each types of threads. In contrast, \NP{} suggests the optimal thread assignment based  the number of accesses of each thread, which indicates the actual workload. 
+SyncPerf also detects load imablance and predicts the optimal thread assignment~\cite{SyncPerf}. SyncPerf aims to achieve the optimal thread assignment by balancing the waiting time of each types of threads. In contrast, \NP{} suggests the optimal thread assignment based  the number of accesses of each thread, which indicates the actual workload. 
 
 %Predator\cite{Predator} also used emulation based approach to detect false problems, which is very similar with NumaPerf. By emulate cache line, they could collection some information like when did a cache invalidation happened, how the cache line is shared between threads:true sharing or false sharing, and also how serious the sharing is. But this work is mainly focus on false sharing issues detection, which did not take NUMA perspectives into consider.
 
