@@ -1,69 +1,82 @@
 %\renewcommand{\arraystretch}{1.5}
 \begin{table*}[tp]
 %\footnotesize
-% 	\setlength{\tabcolsep}{0.3em}
+ 	\setlength{\tabcolsep}{0.45em}
 \centering
-\begin{tabular}{|l|c|l|r|l|r|r|c|c|}
+\begin{tabular}{|c|c|l|l|r|l|l|l|c|c|c|}
     \hline
-    \cline{1-8}
-    \multirow{2}{*}{Application}& \multirow{2}{*}{Improve}& \multicolumn{5}{c}{Specific Issues}&\\
-    \cline{3-8}
-    & & Issue & Score & \multicolumn{1}{|c|}{Allocation Site} & \multicolumn{1}{|c|}{Fix Strategy} & Improve & New \\ 
+    \cline{1-9}
+    \multirow{2}{*}{Application}& \multirow{2}{*}{Improve}& \multicolumn{7}{c}{Specific Issues}&\\
+    \cline{3-10}
+    & & \# & Issue & Score & \multicolumn{1}{|c|}{Allocation Site} & \multicolumn{1}{|c|}{Fix Strategy} & \multicolumn{2}{|c|}{Improve} & New \\ 
     \hline 
     % Application & Issue (score) & Strategy&New&Source Code&RunningTime&Final RunningTime\\ \hline
     
-    \multirow{2}{*}{AMG2006}&\multirow{2}{*}{160\%}&\PS&3612&par\_rap.c:1385&\BI&160\%& \\
-    \cline{3-8}
+    \multirow{2}{*}{AMG2006}&\multirow{2}{*}{160\%}& 1 & \PS&7390&par\_rap.c:1385&\BI&\multicolumn{2}{|c|}{160\%}& \\
+    \cline{3-10}
     
-    &&\TM&230&&\TB&132\%&\checkmark \\ \hline
+    &  & 2 &\TM&6&&\TB&\multicolumn{2}{|c|}{132\%}&\checkmark \\ \hline
 
-    \multirow{7}{*}{lulesh}&\multirow{7}{*}{594\%}&\PS&1978&lulesh.cc:543-545&\BI&429\%& \\
-    \cline{3-8}
+    \multirow{7}{*}{lulesh}&\multirow{7}{*}{594\%}& 3 &\PS&1840&lulesh.cc:543-545&\BI&\multicolumn{2}{|c|}{429\%}& \\
+    \cline{3-10}
 
-    &&\PS&1611&lulesh.cc:1029-1034&\BI&504\%&  \\
-    \cline{3-8}
+    &&4&\PS&1504&lulesh.cc:1029-1034&\BI&\multicolumn{2}{|c|}{504\%}&  \\
+    \cline{3-10}
     
-    &&\PS&1283&\multirow{2}{*}{lulesh.cc:2251-2264}&\BI&\multirow{2}{*}{416\%}& \\
-    &&\FS&174&& + \PAD && \checkmark\\
-    \cline{3-8}
+    &&5&\PS&4496&\multirow{2}{*}{lulesh.cc:2251-2264}&\BI&406\%&\multirow{2}{*}{418\%}& \\
+    \cline{3-5}\cline{7-8}\cline{10-10}
+    &&6&\FS&26&&\PAD &103\%&& \checkmark\\
+    \cline{3-10}
     
-    &&\PS&1316&\multirow{2}{*}{lulesh.cc:2089}&\BI&\multirow{2}{*}{391\%}& \\
-    &&\FS&170&& + \PAD && \checkmark\\
-    \cline{3-8}
+    &&7&\PS&1229&\multirow{2}{*}{lulesh.cc:2089}&\BI&392\%&\multirow{2}{*}{407\%}& \\
+    \cline{3-5}\cline{7-8}\cline{10-10}
+    &&8&\FS&12&&\PAD &104\%&& \checkmark\\
+    \cline{3-10}
     
-    &&\TM&153&&\TB&382\%&\checkmark \\ \hline
+    &&9&\TM&3328&&\TB&\multicolumn{2}{|c|}{382\%}&\checkmark \\ \hline
     
-    UMT2013&131\%&\TM&253&&\TB&131\%&\checkmark \\
+    UMT2013&131\%&10&\TM&18&&\TB&\multicolumn{2}{|c|}{131\%}&\checkmark \\
     \hline 
     \hline
     
-    bodytrack&105\%&\TM&13646&&\TB&105\% &\checkmark \\ \hline
+    \multirow{3}{*}{bodytrack}&\multirow{3}{*}{109\%}&11&\PS&10800&\multirow{2}{*}{FlexImageStore.h:146}&\PI&\multicolumn{2}{|c|}{\multirow{2}{*}{106\%}}& \\
+    \cline{3-5}\cline{7-7}\cline{10-10}
+    &&12&\FS&24&& &\multicolumn{2}{|c|}{}&\checkmark \\
+    \cline{3-10}
+    &&13&\TM&297&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
     
-    dedup&106\%&\TI&&& adjust threads assignment &106\%&\checkmark \\ \hline
+    dedup&116\%&14&\TI&&& adjust threads  &\multicolumn{2}{|c|}{116\%}&\checkmark \\ \hline
     
-    facesim&105\%&\TM&399&&\TB&105\%&\checkmark \\ \hline
+    facesim&105\%&15&\TM&607&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
     
-    ferret&208\%&\TI&&& adjust threads assignment &208\%&\checkmark \\ \hline
+    ferret&206\%&16&\TI&&& adjust threads  &\multicolumn{2}{|c|}{206\%}&\checkmark \\ \hline
  
-    \multirow{5}{*}{fluidanimate}&\multirow{5}{*}{429\%}&\PS&154&\multirow{2}{*}{pthreads.cpp:294}&\PI&\multirow{2}{*}{150\%}& \\
-    &&\FS&223&& + \PAD&&\checkmark \\
-    \cline{3-8}
     
-    &&\PS&45994&\multirow{2}{*}{pthreads.cpp:292}& \multirow{2}{*}{\PI} &\multirow{2}{*}{340\%}& \\
-    &&\TS&19545&&&&\checkmark \\
-    \cline{3-8}
-     
-    &&\TM&812&&\TB&418\%&\checkmark \\ \hline
+    \multirow{5}{*}{fluidanimate}&\multirow{5}{*}{429\%}&17&\PS&90534&\multirow{2}{*}{pthreads.cpp:292}& \multirow{2}{*}{\PI} &\multicolumn{2}{|c|}{\multirow{2}{*}{340\%}}& \\
+    \cline{3-5} \cline{10-10}
+    &&18&\TS&2941&&&\multicolumn{2}{|c|}{}&\checkmark \\
+    \cline{3-10}
     
-    \multirow{4}{*}{streamcluster}&\multirow{4}{*}{167\%}&\PS&405&\multirow{2}{*}{streamcluster.cpp:984}&\PI&\multirow{2}{*}{105\%}& \\
-    &&\FS&368&& + \PAD&& \checkmark\\
-    \cline{3-8}
+    &&19&\PS&180&\multirow{2}{*}{pthreads.cpp:294}&\PI&112\%&\multirow{2}{*}{160\%}& \\
+    \cline{3-5}\cline{7-8}\cline{10-10}
+    &&20&\FS&20&&\PAD&158\%&&\checkmark \\
+    \cline{3-10}
+    
+    
      
-    &&\PS&6397&streamcluster.cpp:1845&\DUP&158\%& \\
-    \cline{3-8}
+    &&21&\TM&73&&\TB&\multicolumn{2}{|c|}{418\%}&\checkmark \\ \hline
+    
+    \multirow{4}{*}{streamcluster}&\multirow{4}{*}{167\%}&22&\PS&427&\multirow{2}{*}{streamcluster.cpp:984}&\PI&100\%&\multirow{2}{*}{103\%}& \\
+    \cline{3-5}\cline{7-8}\cline{10-10}
+    &&23&\FS&31&&\PAD&102\%&& \checkmark\\
+    \cline{3-10}
      
-    &&\TM&252&&\TB&132\%&\checkmark \\ \hline
+    &&24&\PS&7169&streamcluster.cpp:1845&\DUP&\multicolumn{2}{|c|}{158\%}& \\
+    \cline{3-10}
+     
+    &&25&\TM&229&&\TB&\multicolumn{2}{|c|}{132\%}&\checkmark \\ \hline
     \end{tabular}
-  \caption{Detected NUMA performance issues of \NP{}, where it detects multiple performance bugs that cannot be detected using existing NUMA profilers (with a check mark in the last column). \todo{Differentiate the performance impact caused by false sharing and page sharing}}
+  \caption{Detected NUMA performance issues when running on an 8-node NUMA machine. \NP{} detects 15 more performance bugs that cannot be detected by existing NUMA profilers (with a check mark in the last column).}
+  %\vspace{-0.2in}
   \label{tab:numa_issues}
 \end{table*}

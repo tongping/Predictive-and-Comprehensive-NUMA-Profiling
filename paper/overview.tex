@@ -1,4 +1,4 @@
-\section{Overview}
+\section{Background and Overview}
 \label{sec:overview}
 
 This section starts with the introduction of the NUMA architecture and potential performance issues. Then it briefly discusses the basic idea of \NP{} to identify such issues. 
@@ -6,27 +6,31 @@ This section starts with the introduction of the NUMA architecture and potential
 \subsection{NUMA Architecture}
 \label{sec:numa}
 
-Traditional computers use the Uniform Memory Access (UMA) model. In this model,  all CPU cores share a single memory controller such that any core can access the memory with the same latency (uniformly). However, the UMA architecture cannot accommodate the increasing number of cores in recent years because these cores may compete for the same memory controller. The memory controller becomes the performance bottleneck in many-core machines since a task cannot proceed without getting its necessary data from the memory. 
+Traditional computers use the Uniform Memory Access (UMA) model. In this model,  all CPU cores share a single memory controller such that any core can access the memory with the same latency (uniformly). However, the UMA architecture cannot accommodate the increasing number of cores because these cores may compete for the same memory controller. The memory controller becomes the performance bottleneck in many-core machines since a task cannot proceed without getting its necessary data from the memory. 
 
 \begin{figure}[htbp]
 %\vspace{-0.1in}
 \centering
 \includegraphics[width=0.9\columnwidth]{paper/figures/Numa.pdf}
-\caption{An NUMA architecture with four nodes/domains\label{fig:numa}}
+\caption{A NUMA architecture with four nodes/domains\label{fig:numa}}
 %\vspace{-0.1in}
 \end{figure}
-The Non-Uniform Memory Access (NUMA) architecture is proposed to solve this scalability issue, as further shown in Figure~\ref{fig:numa}. It has a decentralized nature. Instead of making all cores waiting for the same memory controller, the NUMA architecture  is typically equipped with multiple memory controllers, where each controller serves a group of CPU cores (called as a node or processor interchangeably). Incorporating multiple memory controllers largely reduce the contention for memory controllers and therefore improve the scalability correspondingly. However, the NUMA architecture also introduce multiple sources of performance degradations~\cite{Blagodurov:2011:CNC:2002181.2002182}, including \textit{Cache Contention}, \textit{Node Imbalance}, \textit{Interconnect Congestion}, and \textit{Remote Accesses}. 
 
-\textbf{Cache Contention:} the NUMA architecture is prone to cache contention: multiple tasks may compete for the shared cache. Cache contention will cause more serious performance degradation if data has to be loaded from a remote node. 
+The Non-Uniform Memory Access (NUMA) architecture is proposed to solve this scalability issue, as further shown in Figure~\ref{fig:numa}. It has a decentralized nature. Instead of making all cores waiting for the same memory controller, the NUMA architecture is typically equipped with multiple memory controllers, where each controller serves a group of CPU cores (called a ``node'' or ``processor'' interchangeably). Incorporating multiple memory controllers largely reduces the contention for memory controllers and therefore improves the scalability correspondingly. However, the NUMA architecture also introduce multiple sources of performance degradations~\cite{Blagodurov:2011:CNC:2002181.2002182}, including \textit{Cache Contention}, \textit{Node Imbalance}, \textit{Interconnect Congestion}, and \textit{Remote Accesses}. 
+
+\textbf{Cache Contention:} the NUMA architecture is prone to cache contention, including false and true sharing. False sharing occurs when multiple tasks may access distinct words in the same cache line~\cite{Hoard}, while different tasks may access the same words in true sharing. For both cases, multiple tasks may compete for the shared cache. Cache contention will cause more serious performance degradation, if data has to be loaded from a remote node. 
  
-\textbf{Node Imbalance:} When some memory controllers have much more memory accesses than others, it may cause the node imbalance issue. Therefore, some tasks may wait more time for memory accesses, thwarting the whole progress of a multithreaded application.  
+\textbf{Node Imbalance:} When some memory controllers have much more memory accesses than others, it may cause the node imbalance issue.
+Therefore, some tasks may wait more time for memory access, thwarting the whole progress of a multithreaded application. 
 
 \textbf{Interconnect Congestion:} Interconnect congestion occurs if some tasks are placed in remote nodes that may use the inter-node interconnection to access their memory. 
 
-\textbf{Remote Accesses:} In NUMA architecture, local nodes can be accessed with less latency than remote accesses. Therefore, it is important to reduce remote accesses to improve the performance.\\
+\textbf{Remote Accesses:} In a NUMA architecture, local nodes can be accessed with less latency than remote accesses. 
+Therefore, it is important to reduce remote access to improve performance.
 
 
-Based on an existing study~\cite{Blagodurov:2011:CNC:2002181.2002182}, node imbalance and interconnect congestion may have a larger performance impact than cache contention and remote accesses. These performance issues cannot be solved solely by hardware design. Software support is required to control the placement of tasks, physical pages, and objects to achieve the optimal performance for multithreaded applications.  
+%Based on the existing study~\cite{Blagodurov:2011:CNC:2002181.2002182}, node imbalance and interconnect congestion may have a larger performance impact than cache contention and remote accesses. These performance issues cannot be solved solely by the hardware design. 
+%Software support is required to control the placement of tasks, physical pages, and objects to achieve the optimal performance for multithreaded applications.  
  
 \subsection{Basic Idea}
 \label{sec:idea}
@@ -36,28 +40,55 @@ Based on an existing study~\cite{Blagodurov:2011:CNC:2002181.2002182}, node imba
 % Why we are using fine-grained, but not coarse-grained? Some issues are not able to identify when using the coarse-grained. For instance, duplication. 
 
 % In order to detect the accesses, we will need to trace memory accesses. Then we are planning to utilize compiler-based instrumentation. Another option is to utilize binary-based instrumentation. 
-
-As discussed in Section~\ref{sec:intro}, \NP{} has multiple design goals that separates it from existing work. First, \NP{} aims to design a topology-independent approach that could report performance issues in any NUMA hardware. Second, it aims to identify different sources of NUMA performance issues as discussed above, not just limited to remote accesses. Third, it aims to propose useful information to guide program fixes.  
+Existing NUMA profilers mainly focus on detecting remote accesses, while omitting other performance issues. In contrast, \NP{} has different design goals as follows.  First, it aims to identify different sources of NUMA performance issues, not just limited to remote accesses. Second, \NP{} aims to design architecture- and scheduling-independent approaches that could report performance issues in any NUMA hardware. Third, it aims to provide sufficient information to guide bug fixes.  
 %specific metrics to evaluate the seriousness of performance issues, instead of relying on programmers' judgement. 
 %Therefore, there is no need to impose any additional runtime overhead in deployment environment. 
 
-
-For the first goal, we have a key observation: \textit{a thread can be scheduled to any node, depending on the hardware topology or the scheduling}. Based on this observation, \NP{} proposes a \textbf{topology-independent} approach that overestimates the number of remote accesses: if a thread accesses a physical page that was initially accessed by a different thread, then this access can be a remote access.
-Based on this, \NP{} tracks every access of each thread in order to identify the first thread working on each page. Due to this reason, \NP{} employs fine-grained instrumentation, instead of coarse-grained sampling. Since \NP{} focuses on thread's relationship, instead of node-relationship, which also reduces detection overhead by removing the checking on node-relationship. 
-
-For the second goal, \NP{} detects NUMA issues caused by cache contention, node imbalance, interconnect congestion, and remote accesses, where existing work only considers remote accesses.  \textit{Cache contention} can be either caused by false or true sharing. False sharing occurs when different threads are accessing separate words in the same cache line~\cite{Hoard}. For both of them, when a thread alters any content of a cache line, the same cache line on other cores will be invalidated simultaneously,  forcing other threads accessing it reload the data. They may have a larger performance impact on the NUMA architecture, due to a higher latency of remote accesses. \NP{} will track all accesses in order to compute the number of cache invalidations with an overestimation. Note that  existing work does not consider false sharing and true sharing separately~\cite{XuNuma, valat:2018:numaprof}, but only consider remote accesses, which may miss some optimization opportunities, as shown in Table~\ref{tab:numa_issues}.  For \textit{node imbalance} and \textit{interconnect connection}, it is infeasible to measure them without knowing the actual memory and thread binding. Instead, \NP{} focuses on one type of issues that may easily introduce these issues, which is workload imbalance of different types of threads. \NP{} tracks the number of accesses to evaluate the workload imbalance and predict a good strategy for thread assignment.  For \textit{remote accesses}, existing work omits one type of remote accesses caused by thread migration, where thread migration will make all local accesses remotely. 
+For the first goal, \NP{} detects NUMA issues caused by cache contention, node imbalance, interconnect congestion, and remote accesses, where existing work only considers remote accesses.  \textit{Cache contention} can be either caused by false or true sharing, which will impose a larger performance impact and require a different fix strategy. Existing work never separates them from normal remote accesses. In contrast, \NP{} designs a separate mechanism to detect such issues, but tracking possible cache invalidations caused by cache contention. 
+%which will require different fix strategies. 
+%. For them, when a thread alters any content of a cache line, the same cache line on other cores will be invalidated simultaneously, forcing other threads to reload the updated data before accesses. 
+%They may have a larger performance impact on the NUMA architecture, due to higher latency of remote accesses. 
+%To evaluate the seriousness of cache contention, \NP{} aims to track all accesses in order to compute the number of cache invalidations.
+%, which also implies the importance of fine-grained. 
+%In contrast, existing work never considers cache contention separately that will impose a larger overhead, and require a different fix strategy~\cite{XuNuma, valat:2018:numaprof}.
+%, but only consider remote accesses, which may miss some optimization opportunities, 
+%as shown in Table~\ref{tab:numa_issues}.  
+It is infeasible to measure all \textit{node imbalance} and \textit{interconnect congestion} without knowing the actual memory and thread binding. Instead, \NP{} focuses on one specific type of issues, which is workload imbalance between different types of threads. 
+%\NP{} treats the total number of accesses as a metric of evaluating the workload, and predict the thread assignment based on it. That is, \NP{} not only detects the performance issues, but also provides the solution for such issues. Experimental results show that \NP{}'s suggested fixes achieve a much better performance than existing work~\cite{SyncPerf}.  
+Existing work omits one type of remote access caused by thread migration, where thread migration will make all local accesses remotely. 
 %Currently, the OS scheduler has no guarantee to put a thread into its original node, if a thread is blocked due to system calls or synchronization. Therefore,
-\NP{} aims to identify applications with a higher chance of thread migrations, by checking the synchronization. A thread with the lock contention or invoking condition waits or barrier waits may pause the execution of the current thread, which may be scheduled to another node afterwards.  \NP{} then suggests thread binding to reduce remote accesses. For normal remote accesses, \NP{} tracks thread's relationship with pages to detect remote ones as discussed above. 
+\NP{} identifies whether an application has a higher chance of thread migrations, in addition to normal remote accesses. 
+Overall, \NP{} detects more NUMA performance issues than existing NUMA profilers. However, the challenge is to design architecture- and scheduling-independent methods. 
+%, which will require thread binding to achieve good performance. 
+%\NP{} evaluates the seriousness of thread migrations with a migration score, computing with the number of thread migrations per time unit. 
+%by checking the node change before and after each synchronization. A thread with the lock contention or invoking condition waits or barrier waits may pause the execution of the current thread, which may be scheduled to another node afterward. \NP{} then suggests thread binding to reduce remote accesses. 
+%For normal remote accesses, \NP{} tracks threads' relationship with pages to detect remote ones as discussed above. 
 
-%However, we understand that putting closely-connected threads into the same physical node will reduce interconnect congestion. Then \NP{} aims to propose good thread clustering method that may reduce interconnect congestion. In particular, \NP{} employs the producer/consumer relationship between objects for the identification, as further described in Section~\ref{}.   
+The second goal of \NP{} is to design architecture- and scheduling approaches that do not bind to specific hardware. Detecting remote accesses is based on the key observation of Section~\ref{sec:intro}: if a thread accesses a physical page that was initially accessed by a different thread, then this access will be counted as remote access. This method is not bound to specific hardware, since memory sharing patterns between threads are typically invariant across multiple executions. 
+%\todo{For the first goal, we have a key observation: \textit{a thread can be scheduled to any node, depending on the hardware topology or the scheduling}. Based on this observation, \NP{} proposes a \textbf{topology-independent} approach that may overestimate the number of remote accesses: if a thread accesses a physical page that was initially accessed by a different thread, then this access will be counted as a possible remote access.
+\NP{} tracks every memory access in order to identify the first thread working on each page. Due to this reason, \NP{} employs fine-grained instrumentation, since coarse-grained sampling may miss the access from the first thread. Based on memory accesses, \NP{} also tracks the number of cache invalidations caused by false or true sharing with the following rule: a write on a cache line with multiple copies will invalidate other copies. Since the number of cache invalidations is closely related to the number of concurrent threads, \NP{} divides the score with the number of threads to achieve a similar result with a different number of concurrent threads, as further described in Section~\ref{sec: cacheline}. Load imbalance will be evaluated by the total number of memory accesses of different types of threads. It is important to track all memory accesses including libraries for this purpose. To evaluate the possibility of thread migration, \NP{} proposes to track the number of lock contentions and the number of condition and barrier waits. Similar to false sharing, \NP{} eliminates the effect caused by concurrent threads by dividing with the number of threads. The details of these implementations can be seen in Section~\ref{sec:implementation} . 
 
-For the third goal, \NP{} will utilize the data-centric analysis as existing work~\cite{XuNuma}. That is, it could report the callsite of heap objects that may have NUMA performance issues. In contrast, another fine-grained profiler--NumaProf~\cite{valat:2018:numaprof}--could only report the lines of code that may access remotely, which require programmers to figure the specific object (i.e. the lines needs to be changed). In addition to that, \NP{} further provides useful information that helps bug fixes. It provides word-based access information on cache contentions, helping programmers to differentiate false or true sharing. It also reports whether an object can be duplicated or not by tracking the temporal read/write pattern, where only read-exclusively (after the first write) objects can be duplicated.  \NP{} also predicts a good thread assignment to achieve better performance for load imbalance issues. Overall, many of these features requires the fine-grained instrumentation in order to avoid false alarms, such as determining the duplication or false/true sharing. 
+%Based on this approach, \NP{} focuses on thread's relationship, instead of node-relationship, which also reduces detection overhead by removing the checking of the physical node of each access and each thread. 
+
+%How to detect load imbalance: based on the number of memory references. Note that we should track all memory references. If some com
+
+%\NP{} further shows accesses of threads to help bug fixes. 
+
+%However, we understand that putting closely-connected threads into the same physical node will reduce interconnect congestion. Then \NP{} aims to propose a good thread clustering method that may reduce interconnect congestion. In particular, \NP{} employs the producer/consumer relationship between objects for the identification, as further described in Section~\ref{}.   
+
+For the third goal, \NP{} will utilize the data-centric analysis as existing work~\cite{XuNuma}. That is, it could report the callsite of heap objects that may have NUMA performance issues. 
+%In contrast, another fine-grained profiler--NUMAPROF~\cite{valat:2018:numaprof}--could only report the lines of code that may access remotely, which require significant human effort to figure out the specific object (i.e. the lines needs to be changed). 
+In addition, \NP{} aims to provide useful information that helps bug fixes, which could be easily achieved when all memory accesses are tracked. \NP{} provides word-based access information for cache contentions, helping programmers to differentiate false or true sharing. It provides threads information on page sharing (help determining whether to use block-wise interleave), and reports whether an object can be duplicated or not by tracking the temporal read/write pattern.
+%, where only read-exclusively (after the first write) objects can be duplicated.  
+\NP{} also predicts a good thread assignment to achieve better performance for load imbalance issues. In summary, many of these features require fine-grained instrumentation in order to avoid false alarms. 
 
 
-Based on the above discussion, \NP{} requires  fine-grained memory accesses to improve the effectiveness and provide better information for bug fixes. Based on that, \NP{} employs a compiler-based instrumentation in order to collect memory accesses, mainly due to the performance concern. An alternative approach is to employ binary-based dynamic instrumentation~\cite{DynamoRlO, Valgrind, Pin}, which may introduce more performance overhead but without an additional compilation step. \NP{} inserts an explicit function call for each read/write access on global variables and heap objects, while accesses on stack variables can be omitted since they typically do not introduce performance issues. To track thread migration, \NP{} also intercepts synchronizations. In summary, \NP{}'s basic idea is further explained in Figure~\ref{fig:overview}.  Basically, \NP{} includes two components, \NP{}-Static and \NP{}-Dynamic. \NP{}-Static is a static compile-time based tool that inserts function calls before memory accesses on heap and global variables, which compiles a program into an instrumented executable file. Then this execution file will be linked to \NP{}-Dynamic so that \NP{} could collect memory accesses,  synchronizations, and information of memory allocations. \NP{} then performs detection on NUMA-related performance issues, and reports to users in the end.  More specific implementations are further discussed in Section~\ref{sec:implementation}. 
-\begin{figure}[htbp]
+Due to the reasons mentioned above, \NP{} utilizes fine-grained memory accesses to improve the effectiveness and provide better information for bug fixes. \NP{} employs compiler-based instrumentation in order to collect memory accesses due to the performance and flexibility concern. An alternative approach is to employ binary-based dynamic instrumentation~\cite{DynamoRlO, Valgrind, Pin}, which may introduce more performance overhead but without an additional compilation step. \NP{} inserts an explicit function call for each read/write access on global variables and heap objects, while accesses on stack variables are omitted since they typically do not introduce performance issues. To track thread migration, \NP{} also intercepts synchronizations. To support data-centric analysis, \NP{} further intercepts memory allocations to collect their callsites.  
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.98\columnwidth]{figures/overview.pdf}
 \caption{Overview of \NP{}\label{fig:overview}}
-%\vspace{-0.1in}
+\vspace{-0.2in}
 \end{figure}
+
+Figure~\ref{fig:overview} summarizes \NP{}'s basic idea.  \NP{} includes two components, \NP{}-Static and \NP{}-Dynamic. \NP{}-Static is a static compile-time based tool that inserts a function call before every memory access on heap and global variables, which compiles a program into an instrumented executable file. Then this executable file will be linked to \NP{}-Dynamic so that \NP{} could collect memory accesses, synchronizations, and information of memory allocations. \NP{} then performs detection on NUMA-related performance issues, and reports to users in the end.  More specific implementations are discussed in Section~\ref{sec:implementation}. 

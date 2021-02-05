@@ -1,0 +1,29 @@
+%\renewcommand{\arraystretch}{1.5}
+\begin{table}[!htp]
+% \footnotesize
+% \setlength{\tabcolsep}{0.3em}
+  \centering
+    \begin{tabular}{|l|r|r|r|}
+    \hline
+    \multirow{2}{*}{Apps}&
+    \multicolumn{3}{c|}{Memory Usage (MB)}\\
+    \cline{2-4}
+    &Glibc&\NP&NUMAPROF \\ \hline
+    \hline
+    blackscholes&617&689&685\\ \hline
+    bodytrack&36&139&260\\ \hline
+    canneal&887&1476&2383\\ \hline
+    dedup&917&1806&2388\\ \hline
+    facesim&2638&2826&3005\\ \hline
+    ferret&160&301&445\\ \hline
+    fluidanimate&470&667&753\\ \hline
+    raytrace&1287&1610&2089\\ \hline
+    streamcluster&112&216&928\\ \hline
+    swaptions&28&67&255\\ \hline
+    vips&226&283&463\\ \hline
+    x264&2861&3039&3108\\ \hline \hline  
+    Total&{\bf 10238}&{\bf 13120}&{\bf 16762}\cr\hline
+    \end{tabular}
+  \caption{Memory consumption of different profilers. \label{tab:memory_consumption}}
+  \vspace{-0.2in}
+\end{table}

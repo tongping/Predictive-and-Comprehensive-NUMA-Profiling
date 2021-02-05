@@ -50,7 +50,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % \documentclass[letterpaper,twocolumn,10pt]{article}
-\documentclass[sigplan,screen]{acmart}
+\documentclass[sigplan, 10pt]{acmart}
+%\documentclass[letterpaper,twocolumn,10pt]{acmart}
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
@@ -93,12 +94,12 @@
 \newcommand{\specialcell}[2][c]{%
   \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
   \newcommand{\TM}{\text{thread migration}}
-  \newcommand{\PS}{\text{page sharing}}
+  \newcommand{\PS}{\text{remote access}}
   \newcommand{\TS}{\text{true sharing}}
   \newcommand{\FS}{\text{false sharing}}
   \newcommand{\TI}{\text{thread imbalance}}   \newcommand{\TB}{\text{thread binding}}
-  \newcommand{\BI}{\text{block interleaved}}
-  \newcommand{\PI}{\text{page interleaved}}
+  \newcommand{\BI}{\text{block interleave}}
+  \newcommand{\PI}{\text{page interleave}}
   \newcommand{\PAD}{\text{padding}}
   \newcommand{\DUP}{\text{duplicate}}
 
@@ -114,7 +115,8 @@
 % make title bold and 14 pt font (Latex default is non-bold, 16 pt)
 %\title{\Large \bf Formatting Submissions for a USENIX Conference:\\
 %  An (Incomplete) Example}
-\title{NUMAPerf: Predictive and Comprehensive NUMA Profiling}
+%\title{NUMAPerf: Predictive and Comprehensive NUMA Profiling}
+\title{NumaPerf: Predictive and Comprehensive NUMA Profiling}
 
 %for single author (just remove % characters)
 %\author{
