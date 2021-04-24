@@ -1,12 +1,16 @@
 \section{Introduction}
 \label{sec:intro}
 
-The Non-Uniform Memory Access (NUMA) is the de facto design to address the scalability issue with an increased number of hardware cores. Compared to the Uniform Memory Access (UMA) architecture, the NUMA architecture avoids the bottleneck of one memory controller by allowing each node/processor to concurrently access its own memory controller. However, the NUMA architecture imposes multiple system challenges for writing efficient parallel applications, such as remote accesses, interconnect congestion, and node imbalance~\cite{Blagodurov:2011:CNC:2002181.2002182}. User programs could easily suffer from significant performance degradation, necessitating the development of profiling tools to identify NUMA-related performance issues. 
+\todo{he reviewers are mainly concerned with the following issues: (1) The novelty aspects of NumaPerf need to be clarified, (2) the contribution seems narrow and some of the contributions seem overstated , (3) the writing needs some work. }
+
+\todo{Fixing > 1.6x speed-up --> 60\% improvement}
+
+The Non-Uniform Memory Access (NUMA) is the de facto design to address the scalability issue with an increased number of hardware cores. Compared to the Uniform Memory Access (UMA) architecture, the NUMA architecture avoids the bottleneck of one memory controller by allowing each node/processor to concurrently access its own memory controller. However, the NUMA architecture imposes multiple system challenges for writing efficient parallel applications, such as remote accesses, cache contention, interconnect congestion, and node imbalance~\cite{Blagodurov:2011:CNC:2002181.2002182}. User programs could easily suffer from significant performance degradation, necessitating the development of profiling tools to identify NUMA-related performance issues. 
 
 General-purpose profilers, such as \texttt{gprof}~\cite{DBLP:conf/sigplan/GrahamKM82}, \texttt{perf}~\cite{perf}, or \texttt{Coz}~\cite{Coz}, are not suitable for identifying NUMA-related performance issues~\cite{XuNuma,valat:2018:numaprof} because they are agnostic to the architecture difference. 
 %Existing NUMA-related profiling tools can be largely classified into three types. One 
 To detect NUMA-related issues, one type of tools
-simulates cache activities and page affinity based on the collected memory traces~\cite{NUMAGrind, MACPO}. However, they may introduce significant performance slowdown, preventing their uses even in development phases. In addition to this, another type of profilers employs coarse-grained sampling to identify performance issues in the deployment environment~\cite{Intel:VTune, Memphis, Lachaize:2012:MMP:2342821.2342826, XuNuma, NumaMMA, 7847070}, while the third type builds on fine-grained instrumentation that could detect more performance issues but with a higher overhead~\cite{diener2015characterizing, valat:2018:numaprof}. 
+simulates cache activities and page affinity based on the collected memory traces~\cite{NUMAGrind, MACPO}. However, they may introduce significant performance slowdown, preventing their uses even in development phases. Another type of profiler employs coarse-grained hardware sampling to identify performance issues in the deployment environment~\cite{Intel:VTune, Memphis, Lachaize:2012:MMP:2342821.2342826, XuNuma, NumaMMA, 7847070}, while the third type builds on fine-grained instrumentation that could detect more performance issues but with a higher overhead~\cite{diener2015characterizing, valat:2018:numaprof}. 
 %Among them, profiling-based tools may miss some performance opportunities, and provide misleading information for fixes.  
 %Due to this fact, fine-grained tools are more suitable for the development phase, which aims to detect as many performance issues as possible before the release of software. 
 
@@ -14,57 +18,36 @@ simulates cache activities and page affinity based on the collected memory trace
 
 However, the latter two types of tools share the following \textbf{common issues}. \textit{First, they mainly focus on one type of performance issues (i.e., remote accesses), while omitting other types of issues that may have a larger performance impact}. 
 %thread migration that could incur remote accesses, and omit load imbalance that may have a larger performance impact. As a result, they , as shown in our evaluation. 
-\textit{Second, they have limited portability that can only identify remote accesses on the current NUMA hardware}. The major reason is that they rely on the physical node information to detect remote accesses, where the physical page a thread accesses is located in a node that is different from the node of the current thread. However, 
-the relationship between threads/pages with physical nodes can be varied when an application is running on different hardware with different topology, or even on the same hardware at another time. That is, existing tools may miss some remote accesses caused by specific binding. \textit{Third, existing tools could not provide sufficient guidelines for bug fixes}. Users have to spend significant effort to figure out the corresponding fix strategy by themselves. 
+\textit{Second, they have limited portability that can only identify remote accesses on the current NUMA hardware}. The major reason is that they rely on the physical node information to detect remote accesses, where the physical page a thread accesses is located in a node different from the node of the current thread. However, 
+the relationship between threads/pages with physical nodes can be varied when an application is running on different hardware with different topology, or even on the same hardware at another time. That is, existing tools may miss some remote accesses caused by the hardware and the schedule. \textit{Third, existing tools could not provide sufficient guidelines to fix these issues}. Users have to spend significant effort to figure out the corresponding fix strategies manually. 
 
 
-%they cannot predict potential issues running on a different hardware with a different topology, or even a different execution on the same hardware. 
-%Further, some tools explicitly bind threads to nodes/cores~\cite{XuNuma}, which could miss remote accesses caused by the explicit binding.  
+This paper proposes a novel tool---\NP{}---that overcomes these issues. \NP{} is designed as an automatic tool that does not require human annotation or the change of application. It also does not require new hardware or a customized operating system. \NP{} aims to detect NUMA-related issues in development phases when applications are fed with representative inputs. In this way, there is no need to pay additional and unnecessary runtime overhead in deployment phases. We further describe \NP{}'s distinctive goals and designs as follows. 
 
-%For instance, they cannot report whether remote accesses are caused by true or false sharing that clearly requires different fix strategies.   
+First, \NP{} aims to detect more types of NUMA performance issues, while existing NUMA profilers  only focus on remote accesses. The first type is load imbalance among threads, which may lead to memory controller congestion and interconnect congestion. The second type is cross-node migration, which may turn all local accesses of a migrated thread into remote accesses. Based on our evaluation, cross-node migration may lead to $4.2\times$ performance degradation for \texttt{fluidanimate}. However, some applications may not have such issues, which requires the assistance of profiling tools.  
 
-This paper proposes a novel tool---\NP{}---that overcomes these issues. \NP{} is designed as an automatic tool that does not require human annotation or the change of the code. It also does not require new hardware, or the change of the underlying operating system. \NP{} aims to detect NUMA-related issues in development phases, when applications are exercised with representative inputs. In this way, there is no need to pay additional and unnecessary runtime overhead in deployment phases. We further describe \NP{}'s distinctive goals and designs as follows. 
+Second, it proposes a set of architecture-independent and scheduling-independent mechanisms that could predicatively detect the above-mentioned issues on any NUMA architecture, even the profiling is performed on a non-NUMA machine. \NP{}'s detection of remote accesses is based on a \textbf{key observation}:  memory sharing pattern of threads is an invariant determined by the program logic, but the relationship between threads/pages and physical nodes is architecture and scheduling dependent. Therefore, \textit{\NP{} focuses on identifying memory sharing pattern between threads, instead of the specific node relationship of threads and pages}, since a thread/page can be scheduled/allocated to/from a different node in a different execution. This mechanism not only simplifies the detection problem (without the need to track the node information) but also generalizes to different hardware architectures.  \NP{} relies on the relationship of memory accesses from each thread that is not affected by the scheduling, instead of the specific binding of threads (due to the scheduling).  \textit{\NP{} also proposes an architecture-independent mechanism to measure load imbalance}: when different types of threads have a different number of total memory accesses but with the same number of threads, then this application has a load imbalance issue. \textit{\NP{} further proposes a method to predict the probability of thread migrations.} \NP{} computes a migration score based on the contending number of synchronizations, and the number of condition and barrier waits. Overall, \NP{} predicts a set of NUMA performance issues without the requirement of testing on a NUMA machine, where its basic ideas are further discussed in Section~\ref{sec:idea}.   
 
-First, \NP{} aims to detect some additional types of NUMA performance issues, while existing NUMA profilers could only detect remote access. The first type is load imbalance among threads, which may lead to memory controller congestion and interconnect congestion. The second type is cross-node migration, which turns all previous local accesses into remote accesses. Based on our evaluation, cross-node migration may lead to $4.2\times$ performance degradation for \texttt{fluidanimate}. However, some applications may not have such issues, which requires the assistance of profiling tools.  
-%have different probabilities of migration, which requires the assistance of profiling tools.  
-
-%ions may have \NP{} also predicts that a new type of also evaluates the seriousness of cross-node thread migrations of applications, which may introduce significant remote accesses.  since it basically 
-
-%A migrated thread is forced to reload its data that already exists in its previous cache, and access its stack and pages remotely. Further, it will also disrupt memory allocations to create non-local allocations, since most existing allocators will not return freed objects to its original node. 
-
-Second, it proposes a set of architecture-independent and scheduling-independent mechanisms that could predictively detect the above-mentioned issues on any NUMA architecture, even without running on a NUMA machine. \NP{}'s detection of remote accesses is based on a \textbf{key observation}:  memory sharing pattern of threads is an invariant determined by the program logic, but the relationship between threads/pages and physical nodes is architecture and scheduling dependent. Therefore, \textit{\NP{} focuses on identifying memory sharing pattern between threads, instead of the specific node relationship of threads and pages}, since a thread/page can be scheduled/allocated to/from a different node in a different execution. This mechanism not only simplifies the detection problem (without the need to track the node information), but also generalizes to different architectures and executions (scheduling). \textit{\NP{} also proposes an architecture-independent mechanism to measure load imbalance based on the total number of memory accesses from threads}: when different types of threads have a different number of total memory accesses, then this application has a load imbalance issue. \textit{\NP{} further proposes a method to predict the probability of thread migrations.} \NP{} computes a migration score based on the contending number of synchronizations, and the number of condition and barrier waits. Overall, \NP{} predicts a set of NUMA performance issues without the requirement of testing on a NUMA machine, where its basic ideas are further discussed in Section~\ref{sec:idea}.   
-
-%Instead, \NP{} only tracks sharing pattern of memory accesses between threads. 
-
-%The observation also makes it possible to detect potential issues within development phases, instead of paying unnecessary runtime overhead in deployment phases. 
-%, assuming applications are fed with representative inputs. 
+Last but not least, \NP{} aims to provide more helpful information to fix NUMA performance issues. It proposes a set of metrics to measure the seriousness of different performance issues, preventing programmers from spending unnecessary efforts on insignificant issues. Its report could guide users for a better fix. For load imbalance issues, \NP{} suggests a thread assignment that could achieve much better performance than  existing work~\cite{SyncPerf}. For remote accesses, there exist multiple fix strategies with different levels of improvement. Currently, programmers have to figure out a good strategy by themselves. In contrast, \NP{} supplies more information to assist fixes. It separates cache false sharing issues from true sharing and page sharing so that users can use the padding to achieve better performance. It further reports whether the data can be duplicated or not by confirming the temporal relationship of memory reads/writes. It also reports threads accessing each page, which helps users to determine a better fix strategy.  
+%whether a block-wise interleave with the thread binding will have a better performance improvement. 
 
 
-%It instruments all memory accesses in order to predict the load imbalance correctly. 
-%As mentioned above, applications may suffer significant performance issues due to remote accesses, memory controller congestion, and interconnect congestion, but existing tools detect only partial issues related to remote accesses. Based on our understanding, memory controller congestion and interconnection congestion are also related with load imbalance. Therefore, 
-%\NP{} extends its detection scope to identify both remote accesses and load imbalance. For remote accesses, 
-
-Last but not least, \NP{} aims to provide more helpful information to assist bug fixes. 
-Firstly, it proposes a set of metrics to measure the seriousness of different performance issues, preventing programmers from spending unnecessary efforts on insignificant issues. Secondly, its report could guide users for a better fix. For load imbalance issues, \NP{} suggests a thread assignment that could achieve much better performance than existing work~\cite{SyncPerf}. For remote accesses, there exist multiple fix strategies with different levels of improvement. Currently, programmers have to figure out a good strategy by themselves. In contrast, \NP{} supplies more information to assist fixes. It separates cache false sharing issues from true sharing and page sharing so that users can use the padding to achieve better performance. It further reports whether the data can be duplicated or not by confirming the temporal relationship of memory reads/writes. It also reports threads accessing each page, which helps confirm whether a block-wise interleave with the thread binding will have a better performance improvement. 
-
-%In contrast, existing tools may report insignificant issues, and requires significant effort for bugs fixes. For remote accesses caused by sharing, \NP{} will differentiate cache-level sharing from page-level sharing, and false sharing from true sharing, since different sharing patterns will require different fix strategies. For instance, the padding is suitable for fixing cache-level false sharing,  but may not be able to upgrade the performance for true sharing. If remote accesses are caused by thread migration, \NP{} will suggest thread binding. For load imbalance, \NP{} will suggest an appropriate thread assignment to balance workloads. 
-%thread clustering for particular threads and the adjusting number for each type of threads in order to balance workloads.   
-
-%We discovered that applications with a high number of system calls or synchronizations will have a high potential to have thread migration. That is due to the reason that a thread will be placed into a waiting queue, upon synchronizations or system calls, then it could be migrated to a different node by the OS scheduler.
-
-
-We performed extensive experiments to verify the effectiveness of \NP{} with widely-used parallel applications (i.e., PARSEC~\cite{parsec}) and HPC applications (e.g., AMG2006~\cite{}, Lulesh~\cite{}, and UMT2003~\cite{}).  Based on our evaluation, \NP{} detects many more performance issues than the combination of all existing NUMA profilers, including both fine-grained and coarse-grained tools. After fixing such issues, these applications could achieve up to $5.94\times$ performance improvement.  \NP{}'s helpfulness on bug fixes is also exemplified by multiple case studies. Overall, \NP{} imposes less than $6\times$ performance overhead, which is orders of magnitude faster than the previous state-of-the-art in the fine-grained analysis. The experiments also confirm that \NP{}'s detection is architecture-independent, which is able to identify most performance issues when running on a non-NUMA machine. 
+We performed extensive experiments to verify the effectiveness of \NP{} with widely-used parallel applications (i.e., PARSEC~\cite{parsec}) and HPC applications (e.g., AMG2006~\cite{AMG2006}, lulesh~\cite{LULESH}, and UMT2013~\cite{UMT2013}). Based on our evaluation, \NP{} detects many more performance issues than the combination of all existing NUMA profilers, including both fine-grained and coarse-grained tools. After fixing such issues, most applications achieve significant performance speedup, where one application  achieves $5.94\times$ speedup.  \NP{}'s helpfulness on fixing performance issues is also exemplified by multiple case studies. Overall, \NP{} imposes less than $6\times$ performance overhead, which is orders of magnitude faster than the previous state-of-the-art in the fine-grained analysis. The experiments also confirm that \NP{}'s detection is architecture-independent and schedule-independent, which is able to identify most performance issues when running on a non-NUMA machine. 
 %We further evaluates \NP{}'s performance and memory overhead. \NP{} introduces around $X\times$ performance overhead and 
 
 Overall, \NP{} makes the following contributions. 
 
 \begin{itemize}
-    \item \NP{} proposes a set of architecture-independent and scheduling-independent methods that could predictively detect NUMA-related performance issues, even without evaluating on a specific NUMA architecture. 
-    \item \NP{} is able to detect a comprehensive set of NUMA-related performance issues, where some are omitted by existing tools. 
+    \item \NP{} proposes new architecture-independent and scheduling-independent methods that could predicatively detect NUMA-related performance issues, even without the requirement to evaluate on a NUMA architecture. 
     
-    \item \NP{} designs a set of metrics to measure the seriousness of performance issues, and provides helpful information to assist bug fixes.
-    %, which are lacked in existing tools. 
-    \item We have performed extensive evaluations to confirm \NP{}'s effectiveness and overhead.  
+    \item  \NP{} proposes a new mechanism to profile load imbalance issues based on the number of memory accesses, which provides a better prediction on the thread assignment.  
+    
+    \item \NP{} detects some omitted NUMA performance issues by existing tools, such as load imbalance, and thread migrations. 
+    
+    \item \NP{} designs a set of new metrics to measure the seriousness of performance issues and provides helpful information to assist their fixes.
+    
+     \item We have performed extensive evaluations to confirm \NP{}'s effectiveness and overhead.  
+    
 \end{itemize}
 
 
@@ -72,75 +55,7 @@ Overall, \NP{} makes the following contributions.
 
 The remainder of this paper is organized as follows. Section~\ref{sec:overview} introduces the background of NUMA architecture and the basic ideas of \NP{}. Then Section~\ref{sec:implementation} presents the detailed implementation and Section~\ref{sec:evaluation} shows experimental results. After that, Section~\ref{sec:discussion} explains the limitation and  Section~\ref{sec:related} discusses related work in this field. In the end, Section~\ref{sec:conclusion} concludes this paper.
 
-\begin{comment}
- Existing work is typically bound to a specific architecture. 
- 
- In addition, they could only identify one type of issue that a NUMA issue inside the application. However, they cannot explain whether a NUMA issue is caused by the allocator. 
- 
- We observe that NUMA performance issue is similar to cache contention, but can occur in both cache and page granularity. Therefore, we could utilize the same framework to identify both cache contention (false/true sharing) and page-level false sharing issue, instead of only on the page granularity. 
- 
- We also observe that existing profilers only work on a particular architecture. 
- 
- Third, existing profilers could not identify the issues caused by the allocator, which makes them cannot explain performance issue of an allocator. 
- 
- 
- \NP{} will have the following differences. 
- \begin{itemize}
- \item \NP{} does not rely on a specific hardware, which could identify issues in any potential hardware. 
- \item \NP{} could identify the issue caused by the memory allocator, such as passive and active false sharing of objects. 
- \item \NP{} could even identify the metadata issues of a memory allocator. 
- \item \NP{} could identify both cache and page sharing, where both of them have a significant performance impact on the application. 
- \end{itemize}
 
- 
-
-
-Our work is to derive some potential problems of existing applications on the given NUMA hardware, then provides an insight to users how to solve the problem by fixing existing applications. And our work will utilize the on-line analysis. 
-
-% see the paper: Toward the efficient use of multiple explicitly managed memory subsystems.
-In this paper, we use emulator-based profiling to analyze actual program executions when programs are executed, this setup allows us to associates the cache misses with the different memory objects of the executed application. 
-This paper shares the similar target as our paper. 
-
-~\cite{Bolosky:1989:SBE:74850.74854} is their original work that talks about the page management. 
-
-
-We observe that the number of cache loading is the most important metrics.
-In order to evaluate the performance impact, we propose to utilize the number of cache invalidations to evaluate the seriousness of NUMA issues. A more intuitive metrics is the cache line loading operations. However, it is impossible to do this very easily. Thus, we proposes to utilize the number of cache invalidation as the metrics. 
-
-
-However, cache invalidations can be affected by two factors: cache-line based sharing, and size-related invalidations. 
-Size-related invalidations indicate that one core's cache is not sufficient to cover the memory footprint of the thread. Therefore, some cache lines will be evicted, which will cause cause invalidation. However, it is not easy to do this, which will be omitted by the \NP{}. 
-
-Instead, \NP{} focuses cache invalidations caused by sharing, either true or false sharing. Similarly, page-level sharing will end up with the same issue, due to the existence of cache. If the data is held in the cache line and the data is valid, then there will be no remote accesses even if the actual physical page is located remotely. 
-
-Therefore, we propose \NP{} to be a profiling tool that could identify both page and cache-level sharing. Also, \NP{} is based on the observation that applications may have performance issue even if it does not in the current architecture. 
-
-However, the challenge is to evaluate the number of cache invalidations correctly and efficiently. Predator also utilizes the similar mechanism, but cannot compute the number correctly. Then we will give an example about this. 
-
-\NP{} instead will compute the number differently. It will has the number of copies for all threads for each thread, and then the detailed information for each word (which helps to solve the issue). For each write operation, we will increment the number of copies correspondingly, instead of just one.
-
-However, there will be some efficiency issue on the performance and the memory. We can't have the information for each cache line, which will at least impose around $2\times$ memory overhead. Also, we could easily cause significant performance issue if we have to traverse the cache line for all memory writes. 
- 
-\todo{Should we traverse the whole cache line? Or we will use the word-based structure? Then when there is invalidation, then we will clean the per-line flag. } Then we will guarantee that every access will only invoke $O(1)$ operations. 
-
-
-To reduce the memory overhead, we will utilize the number of cache misses and the number of threads as a metrics. If a cache line is only accessed by one thread, then it is possibly only accessed by a thread, then it should not cause the performance issue. 
-Also, if the number of writes on a cache line is small, it will never be the performance issue for most cases. 
-
-However, we may need to save the number of cache misses for each callsite together. Otherwise, some objects will be skipped. 
-
-
-\NP{} is different from existing work that it also profiles the performance issue caused by allocators.  
-
-Major difference:
-
-1. MACPO focus on the code with identified bottleneck, not the whole program.
-2. MACPO only works on arrays, unions, structures, not all variables. 
-3. They care about reuse-distance, and XXX. We may only care about the number of remote accesses
-4. They use offline analysis, not sure whether that is one of reason that cause substantial overhead sinceit will have tons of IO operations. We don't know whether the analysis online will have a better performance
-5. MACPO only output the reuse distance, remote access number, cycles per access (because they utilize the cycle-based cache simulation), access strides (for prefetching). They have output like Figure2. 
-
-\end{comment}
  
 
 

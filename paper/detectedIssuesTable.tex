@@ -35,48 +35,52 @@
     
     &&9&\TM&3328&&\TB&\multicolumn{2}{|c|}{382\%}&\checkmark \\ \hline
     
-    UMT2013&131\%&10&\TM&18&&\TB&\multicolumn{2}{|c|}{131\%}&\checkmark \\
-    \hline 
+    \multirow{2}{*}{UMT2013}&\multirow{2}{*}{131\%}&10&\TM&18&&\TB&\multicolumn{2}{|c|}{131\%}&\checkmark \\
+    \cline{3-10}
+    
+    &&11&\PS&N/A& ZoneData\_mod.F90:95 &N/A&\multicolumn{2}{|c|}{N/A}&N/A \\
+    \hline
     \hline
     
-    \multirow{3}{*}{bodytrack}&\multirow{3}{*}{109\%}&11&\PS&10800&\multirow{2}{*}{FlexImageStore.h:146}&\PI&\multicolumn{2}{|c|}{\multirow{2}{*}{106\%}}& \\
+    \multirow{3}{*}{bodytrack}&\multirow{3}{*}{109\%}&12&\PS&10800&\multirow{2}{*}{FlexImageStore.h:146}&\PI&\multicolumn{2}{|c|}{\multirow{2}{*}{106\%}}& \\
     \cline{3-5}\cline{7-7}\cline{10-10}
-    &&12&\FS&24&& &\multicolumn{2}{|c|}{}&\checkmark \\
+    &&13&\FS&24&& &\multicolumn{2}{|c|}{}&\checkmark \\
     \cline{3-10}
-    &&13&\TM&297&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
+    &&14&\TM&297&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
     
-    dedup&116\%&14&\TI&&& adjust threads  &\multicolumn{2}{|c|}{116\%}&\checkmark \\ \hline
+    dedup&116\%&15&\TI&&& adjust threads  &\multicolumn{2}{|c|}{116\%}&\checkmark \\ \hline
     
-    facesim&105\%&15&\TM&607&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
+    facesim&105\%&16&\TM&607&&\TB&\multicolumn{2}{|c|}{105\%}&\checkmark \\ \hline
     
-    ferret&206\%&16&\TI&&& adjust threads  &\multicolumn{2}{|c|}{206\%}&\checkmark \\ \hline
+    ferret&206\%&17&\TI&&& adjust threads  &\multicolumn{2}{|c|}{206\%}&\checkmark \\ \hline
  
     
-    \multirow{5}{*}{fluidanimate}&\multirow{5}{*}{429\%}&17&\PS&90534&\multirow{2}{*}{pthreads.cpp:292}& \multirow{2}{*}{\PI} &\multicolumn{2}{|c|}{\multirow{2}{*}{340\%}}& \\
+    \multirow{5}{*}{fluidanimate}&\multirow{5}{*}{429\%}&18&\PS&90534&\multirow{2}{*}{pthreads.cpp:292}& \multirow{2}{*}{\PI} &\multicolumn{2}{|c|}{\multirow{2}{*}{340\%}}& \\
     \cline{3-5} \cline{10-10}
-    &&18&\TS&2941&&&\multicolumn{2}{|c|}{}&\checkmark \\
+    &&19&\TS&2941&&&\multicolumn{2}{|c|}{}&\checkmark \\
     \cline{3-10}
     
-    &&19&\PS&180&\multirow{2}{*}{pthreads.cpp:294}&\PI&112\%&\multirow{2}{*}{160\%}& \\
+    &&20&\PS&180&\multirow{2}{*}{pthreads.cpp:294}&\PI&112\%&\multirow{2}{*}{160\%}& \\
+    
     \cline{3-5}\cline{7-8}\cline{10-10}
-    &&20&\FS&20&&\PAD&158\%&&\checkmark \\
+    &&21&\FS&20&&\PAD&158\%&&\checkmark \\
     \cline{3-10}
     
     
      
-    &&21&\TM&73&&\TB&\multicolumn{2}{|c|}{418\%}&\checkmark \\ \hline
+    &&22&\TM&73&&\TB&\multicolumn{2}{|c|}{418\%}&\checkmark \\ \hline
     
-    \multirow{4}{*}{streamcluster}&\multirow{4}{*}{167\%}&22&\PS&427&\multirow{2}{*}{streamcluster.cpp:984}&\PI&100\%&\multirow{2}{*}{103\%}& \\
+    \multirow{4}{*}{streamcluster}&\multirow{4}{*}{167\%}&23&\PS&427&\multirow{2}{*}{streamcluster.cpp:984}&\PI&100\%&\multirow{2}{*}{103\%}& \\
     \cline{3-5}\cline{7-8}\cline{10-10}
-    &&23&\FS&31&&\PAD&102\%&& \checkmark\\
+    &&24&\FS&31&&\PAD&102\%&& \checkmark\\
     \cline{3-10}
      
-    &&24&\PS&7169&streamcluster.cpp:1845&\DUP&\multicolumn{2}{|c|}{158\%}& \\
+    &&25&\PS&7169&streamcluster.cpp:1845&\DUP&\multicolumn{2}{|c|}{158\%}& \\
     \cline{3-10}
      
-    &&25&\TM&229&&\TB&\multicolumn{2}{|c|}{132\%}&\checkmark \\ \hline
+    &&26&\TM&229&&\TB&\multicolumn{2}{|c|}{132\%}&\checkmark \\ \hline
     \end{tabular}
-  \caption{Detected NUMA performance issues when running on an 8-node NUMA machine. \NP{} detects 15 more performance bugs that cannot be detected by existing NUMA profilers (with a check mark in the last column).}
+  \caption{Detected NUMA performance issues when running on an 8-node NUMA machine. \NP{} detects 15 more performance bugs that cannot be detected by existing NUMA profilers (with a check mark in the last column). Note that \NP{} cannot detect one issue (item 11) that can be detected by existing tools. }
   %\vspace{-0.2in}
   \label{tab:numa_issues}
 \end{table*}
