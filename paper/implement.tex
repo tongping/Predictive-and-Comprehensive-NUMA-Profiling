@@ -75,7 +75,7 @@ TMS =  \dfrac{\sum_{i=0}^{|T|} {M_i}}{R} \cdot P \label{equation:tms}
 
 Here,  $M_i$ is the possible migration times of  thread $i$, $R$ is total running time (seconds) of the program, and $P$ is the parallel phase percentage. Overall, this formula computes the average migration times per thread per second at first, and then multiplies the value with the parallel phase percentage. The multiplication is introduced because applications with a small percentage of parallel phase should have a lower performance impact that can be caused by thread migration. 
 
-a%ll threads in the program,  |T| is the number of total threads, $c_t$ is the lock contention times for thread $t$, and $R$ is total running seconds of the program.
+%ll threads in the program,  |T| is the number of total threads, $c_t$ is the lock contention times for thread $t$, and $R$ is total running seconds of the program.
 
 Similarly, \NP{} predicts the possible migration times, instead of detecting the real migration times. \NP{} utilizes the total number of lock contentions, condition waits, and barrier waits as the estimation of possible migration times, which could be higher than the real migration times. To correct these numbers, \NP{} intercepts the above-mentioned synchronizations via a preloading mechanism, where lock contention can be identified by checking the status of the lock. After that, \NP{} further utilizes the Equation~\ref{equation:tms} to filter out serious issues that require user attention. 
 

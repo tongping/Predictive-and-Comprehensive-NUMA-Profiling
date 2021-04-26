@@ -7,7 +7,7 @@ This section aims to answer the following research questions:
 \begin{itemize}
 \item \textbf{Effectiveness:} Whether \NP{} could detect more performance issues than existing NUMA-profilers? (Section~\ref{effectiveness}) How helpful is \NP{}'s report? (Section~\ref{sec:casestudies})
 \item \textbf{Performance:} How much performance overhead is imposed by \NP{}'s detection, comparing to the state-of-the-art fine-grained tool? (Section~\ref{sec:performance}) 
-\item \textbf{Memory Overhead:} What is the memory overhead of \NP{}? (Section~\ref{sec:memory})
+\item \textbf{Memory Overhead:} What is the memory overhead of \sloppy \NP{}? (Section~\ref{sec:memory})
 \item \textbf{Architecture Independence:} Whether \NP{} could detect the similar issues when running on a non-NUMA architecture? (Section~\ref{sec:archindependent})	
 \end{itemize}
 
@@ -24,7 +24,7 @@ This section aims to answer the following research questions:
 \input{detectedIssuesTable}
 
 
-We evaluated \NP{} on multiple HPC applications (e.g.,  AMG2006~\cite{AMG2006}, lulesh~\cite{LULESH}, and UMT2013~\cite{UMT2013}) and a widely-used multithreaded application benchmark suite --- PARSEC~\cite{parsec}.  Applications with NUMA performance issues are listed in Table~\ref{tab:numa_issues}. The ``Improve'' column of Table~\ref{tab:numa_issues} also shows the performance improvement (the average of 10 executions) after fixing the corresponding issue based on the tool's feedback. Here, the basic version is running with the default \texttt{glibc} library  without thread binding. We divide the runtime of this basic version by the runtime after fixes to get the improvement rate. For each issue, the table listed the type of issue and the corresponding score (if applicable), the allocation site, and the fix strategy. Note that the table only shows cases with  page sharing scores larger than 1500 (if without cache false/true sharing), false/true sharing scores larger than 1, and thread migration scores larger than 150. Further, the performance improvement of each specific issue is listed as well. We also present multiple case studies that show how helpful is \NP{}'s report in Section~\ref{sec:casestudies}.   
+We evaluated \NP{} on multiple HPC applications (e.g., \sloppy AMG2006~\cite{AMG2006}, lulesh~\cite{LULESH}, and UMT2013~\cite{UMT2013}) and a widely-used multithreaded application benchmark suite --- PARSEC~\cite{parsec}.  Applications with NUMA performance issues are listed in Table~\ref{tab:numa_issues}. The ``Improve'' column of Table~\ref{tab:numa_issues} also shows the performance improvement (the average of 10 executions) after fixing the corresponding issue based on the tool's feedback. Here, the basic version is running with the default \texttt{glibc} library  without thread binding. We divide the runtime of this basic version by the runtime after fixes to get the improvement rate. For each issue, the table listed the type of issue and the corresponding score (if applicable), the allocation site, and the fix strategy. Note that the table only shows cases with  page sharing scores larger than 1500 (if without cache false/true sharing), false/true sharing scores larger than 1, and thread migration scores larger than 150. Further, the performance improvement of each specific issue is listed as well. We also present multiple case studies that show how helpful is \NP{}'s report in Section~\ref{sec:casestudies}.   
 
 Overall, we have the following observations. First, it reports no false positives by only reporting scores larger than the above-mentioned thresholds. Second, \NP{} 
 detects more performance issues than the combination of all existing NUMA profilers~\cite{Intel:VTune, Memphis, Lachaize:2012:MMP:2342821.2342826, XuNuma, NumaMMA, 7847070, diener2015characterizing, valat:2018:numaprof}. The performance issues that cannot be detected by existing NUMA profilers are highlighted with a checkmark in the last column of the table, although some can be detected by other  tools (but not NUMA tools), such as cache false/true sharing issues~\cite{Sheriff, Predator, Cheetah, DBLP:conf/ppopp/ChabbiWL18, helm2019perfmemplus}. This comparison with existing NUMA profilers is based on the methodology, instead of based on the results of specific tools. Some difficulties exist for the direct comparison. For instance, although  NUMAPROF can run successfully on our machine~\cite{valat:2018:numaprof}, it is  difficult to compare with directly due to the following reasons: (1) it does not provide the data-centric view and only reports statements with remote accesses. This shortcoming makes it difficult to identify the issue. (2) Further, NUMAPROF does not use a threshold-based approach, which may report a lot of statements with a small number of remote accesses. Thus, it is difficult to utilize the reports of NUMAPROF directly. \NP{} overcomes these issues by only reporting issues with high impacts, relying on a set of new metrics. Therefore, if an issue is labeled as ``\checkmark'' in the ``New'' column in Table~\ref{tab:numa_issues}, this issue is definitely not detectable by all existing NUMA profilers from the methodology point of view. Overall, existing NUMA profilers cannot detect false or true sharing and issues caused by thread migration and load imbalance. 
@@ -63,10 +63,11 @@ language=c++,
 
 For remote accesses, \NP{}  not only reports remote access scores, indicating the seriousness of the corresponding issue, but also provides additional information to reduce remote accesses. Remote accesses can be reduced with different strategies, such as padding (false sharing), block-wise interleaving~\cite{XuNuma}, duplication, and page interleaving. Block-wise interleaving is to divide the whole object into multiple blocks, and then bind each block and threads accessing it to the corresponding NUMA node.  
 
+\NP{} provides a data-centric analysis, as existing work~\cite{XuNuma}. That is, it always attributes performance issues to its allocation callsite. \NP{} also shows the seriousness with its remote access score. 
+
+\NP{} further reports more specific information to guide the fix. As shown in Listing~\ref{blockinterleave} (\#5), \NP{} further reports each page that is accessed by which threads. Based on this information,  block-wise interleaving is a better strategy for the fix, which achieves a better performance result. However, for Issue \# 18 or \# 20 of \texttt{fluidanimate}, there is no such access pattern. Therefore, these issues can be fixed with the normal page interleave method. 
 
 %\XZ{remote score and false sharing score are fixed. What is the case number?You mean issue number? is not used.}
-
-
 \begin{lstlisting}[caption={Remote access issue of lulesh },label={blockinterleave},captionpos=b]
 Allocation Site: lulesh.cc:2251
 Remote score:  1220
@@ -76,9 +77,11 @@ Pages accessed by threads:
     0--8, 8--16, 16--23, 23--31 ......
 \end{lstlisting}
 %\todo{I didn't find lulesh.cc:2251 has an issue. I also didn't find the score. Make sure the score is the same as Table 1 and Table 3}. 
-\NP{} provides a data-centric analysis, as existing work~\cite{XuNuma}. That is, it always attributes performance issues to its allocation callsite. \NP{} also shows the seriousness with its remote access score. 
-\NP{} further reports more specific information to guide the fix. As shown in  Listing~\ref{blockinterleave} (\#5), \NP{} further reports each page that is accessed by which threads. Based on this information,  block-wise interleaving is a better strategy for the fix, which achieves a better performance result. However, for Issue \# 18 or \# 20 of \texttt{fluidanimate}, there is no such access pattern. Therefore, these issues can be fixed with the normal page interleave method. 
 
+%\todo{Sorry, do not have time to do this. Better to check if we don't use duplications, how much performance we can achieve for this example. But this is in lower priority} 
+Listing~\ref{duplicate} shows another example of remote accesses. For this issue (\# 25), a huge number of continuous reads (2330M) were detected after the last write. Based on such a report, the object can be duplicated to different physical nodes, which improves the performance by 158\%, which achieves significantly better performance than page interleaving.
+
+\NP{} differentiates cache coherency issues from normal remote accesses, and further differentiates false sharing from true sharing due to different fix strategies. Given the report, programmers could utilize the padding to eliminate false sharing issues. As shown in Table~\ref{sec:evaluation}, many issues have false sharing issues (e.g., \#6, \#8, \#13, \#21, \#24). Fixing them with the padding could easily boost the performance, which cannot be done without the detailed report. Instead, true sharing will utilize a different fix strategy, such as page interleaving. Overall, \NP{}'s precise report provides better information to guide the fixes.  
 \begin{lstlisting}[caption={Remote access issue of streamcluster},label={duplicate},captionpos=b]
 Allocation site:streamcluster.cpp:1845
 Remote score:   7169
@@ -86,11 +89,6 @@ False sharing score:  0.00
 True Sharing score:   0.00
 Continuous reads after the last write:   2443582804
 \end{lstlisting}
-
-%\todo{Sorry, do not have time to do this. Better to check if we don't use duplications, how much performance we can achieve for this example. But this is in lower priority} 
-Listing~\ref{duplicate} shows another example of remote accesses. For this issue (\# 25), a huge number of continuous reads (2330M) were detected after the last write. Based on such a report, the object can be duplicated to different physical nodes, which improves the performance by 158\%, which achieves significantly better performance than page interleaving. 
-
-\NP{} differentiates cache coherency issues from normal remote accesses, and further differentiates false sharing from true sharing due to different fix strategies. Given the report, programmers could utilize the padding to eliminate false sharing issues. As shown in Table~\ref{sec:evaluation}, many issues have false sharing issues (e.g., \#6, \#8, \#13, \#21, \#24). Fixing them with the padding could easily boost the performance, which cannot be done without the detailed report. Instead, true sharing will utilize a different fix strategy, such as page interleaving. Overall, \NP{}'s precise report provides better information to guide the fixes.  
 
 %However a further interleaved strategy could give more benefits after padding as showed in Table~\ref{sec:evaluation} for Issue[5,7,11,19,22].But true sharing is very hard to be eliminated, so a simple interleaved strategy is applied for Issue[18] in Table~\ref{sec:evaluation} to reduce resource contention for NUMA architecture. 
 
