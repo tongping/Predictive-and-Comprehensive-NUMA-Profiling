@@ -1,9 +1,10 @@
 \section{Introduction}
 \label{sec:intro}
 
-\todo{he reviewers are mainly concerned with the following issues: (1) The novelty aspects of NumaPerf need to be clarified, (2) the contribution seems narrow and some of the contributions seem overstated , (3) the writing needs some work. }
+%\todo{he reviewers are mainly concerned with the following issues: (1) The novelty aspects of NumaPerf need to be clarified, (2) the contribution seems narrow and some of the contributions seem overstated , (3) the writing needs some work. }
 
-\todo{Fixing > 1.6x speed-up --> 60\% improvement}
+%\todo{Fixing > 1.6x speed-up --> 60\% improvement}
+%\XZ{I do not understand what does this mean. Does this mean we will use (runningTimeBeforeImprove/runningTimeAfterImprove)-1 for all place in the paper?}
 
 The Non-Uniform Memory Access (NUMA) is the de facto design to address the scalability issue with an increased number of hardware cores. Compared to the Uniform Memory Access (UMA) architecture, the NUMA architecture avoids the bottleneck of one memory controller by allowing each node/processor to concurrently access its own memory controller. However, the NUMA architecture imposes multiple system challenges for writing efficient parallel applications, such as remote accesses, cache contention, interconnect congestion, and node imbalance~\cite{Blagodurov:2011:CNC:2002181.2002182}. User programs could easily suffer from significant performance degradation, necessitating the development of profiling tools to identify NUMA-related performance issues. 
 

@@ -1,33 +1,14 @@
 \section{Design and Implementation}
 \label{sec:implementation}
 
-This section elaborates \NP{}-Static and \NP{}-Dynamic. \NP{} leverages compiler-based instrumentation (\NP{}-Static) to insert a function call before memory access, which allows \NP{}-Dynamic to collect memory accesses. \NP{} utilizes a pre-load mechanism to intercept synchronizations and memory allocations, without the need of changing programs explicitly. Detailed design and implementation are discussed as follows. 
-
-\begin{comment}
-\NP{} leverages compiler-based instrumentation to insert a handle function for each memory access. This allows \NP{} to collect memory accesses.
-how the memory is accessed in both page and cache level, and collect the sharing pattern when the memory object is freed by users.If they are never freed explicitly, \NP{} can do the collection in the end of the whole application. If too many remote memory access happened in a memory object, it needs an attention. Besides, \NP{} also collected thread based information like how many thread migration happened, how many different thread groups, and how many local and remote memory access incurred in each thread.Based on these thread based information, \NP{} could tell users what kinds of NUMA imbalance issues the application contained and how to fix it.
-
-\end{comment}
+This section elaborates \NP{}-Static and \NP{}-Dynamic. \NP{} leverages compiler-based instrumentation (\NP{}-Static) to insert a function call before memory access, which allows \NP{}-Dynamic to collect memory accesses. \NP{} utilizes a preloading mechanism to intercept synchronizations and memory allocations, without the need of changing programs explicitly. Detailed design and implementation are discussed as follows. 
 
 \subsection{\NP{}-Static} 
-\NP{}'s static component (\NP{}-Static) performs the instrumentation on memory accesses. In particular, it utilizes static analysis to identify memory accesses on heap and global variables, while omitting memory accesses on static variables. Based on our understanding, static variables will never cause performance issues, if a thread is not migrated. \NP{}-Static inserts a function call 
+\NP{}'s static component (\NP{}-Static) performs the instrumentation on memory accesses. In particular, it utilizes static analysis to identify memory accesses on heap and global variables, while omitting memory accesses on local variables. Based on our understanding, local variables typically will never cause performance issues. \NP{}-Static inserts a function call 
 upon these memory accesses, where this function is implemented in \NP{}-Dynamic library. In particular, this function provides detailed information on the access, including the address, the type  (i.e., read or write), and the number of bytes.  
 
-\NP{} employs the LLVM compiler to perform the instrumentation~\cite{llvm}. It chooses the intermediate  representation (IR) level for the instrumentation due to the flexibility, since LLVM provides lots of APIs and tools to manipulate the IR. The instrumentation pass is placed at the end of the LLVM optimization passes, where only memory accesses surviving all previous optimization passes will be instrumented.  \NP{}-Static traverses functions one by one, and instruments memory accesses on global and heap variables. The instrumentation is adapted from AddressSanitizer~\cite{AddressSanitizer}.
-%, which drastically reduce the number of function calls due to its static analysis and the placement of the instrumentation inside optimization passes. 
+\NP{} employs the LLVM compiler to perform the instrumentation~\cite{llvm}. It chooses the intermediate representation (IR) level for the instrumentation due to the flexibility, same as AddressSanitizer~\cite{AddressSanitizer}, since LLVM provides lots of APIs and tools to manipulate the IR. The instrumentation pass is placed at the end of the LLVM optimization passes, where only memory accesses surviving all previous optimization passes will be instrumented.  \NP{}-Static traverses all functions one by one, and instruments a function call before memory accesses on global and heap variables. The instrumentation is adapted from AddressSanitizer~\cite{AddressSanitizer}.
 
-\begin{comment}
-
-To intercept memory access instructions, The function call is implemented by \NP{}, through which \NP{} could intercept each memory access operation from target applications with its address and access type(read or write).
-
-It is worth to note that \NP{} only focused on memory access to heap objects and global objects, since they have much higher chance to be shared for multiple threads, which leads potential NUMA issues. If an object is only accessed by one single thread, it will never cause performance issues, unless threads migrated to another nodes and \NP{} could also detect this problem that is detailed described in the following parts.Besides, the pass function should be placed at the very end of compiling optimization phase of LLVM, since most memory access instructions will be optimized out after huge amounts of compiling optimization strategies applied by LLVM. Based on our experiments, the number of memory access instructions could be reduce by half or more.So if the order of the pass function is not set properly, huge amounts of duplicated instrumentation calls will be made which not only brings more overheads but also makes the profiling results not accurate.
-
-\end{comment}
-
-% What are the challenges of that? 
-% What type of issues that we usually have. I remembered that we used to have high overhead with compiler-based instrumentation.
-
-% What particular issue for the version of instrumentation. 
 
 \subsection{\NP{}-Dynamic}
 
@@ -35,136 +16,86 @@ This subsection starts with tracking application information, such as memory acc
 
 \subsubsection{Tracking Accesses, Synchronizations, and Memory Allocations}
 
-\NP{}-Dynamic implements the inserted functions before memory accesses, allowing it to track memory accesses. Once a memory access is intercepted, \NP{} performs the detection as discussed below. 
+\NP{}-Dynamic implements the inserted function before memory accesses, allowing it to track memory accesses. Once a memory access is intercepted, \NP{} performs the detection as discussed below. 
 
 \NP{} utilizes a preloading mechanism to intercept synchronizations and memory allocations before invoking correspond functions.
-%It implements all synchronization functions related to mutexes, condition variables, and thread creations, as well as memory allocations and deallocations. 
-%By forcing the pre-loading the \NP{}-Dynamic, we are able to intercept these functions before their actual invocations. 
-\NP{} intercepts synchronizations in order to detect possible thread migrations, which will be explained later. \NP{} also intercepts memory allocations, so that we could attribute performance issues to different callsites, assisting data-centric analysis~\cite{XuNuma}. For each memory allocation, \NP{} records the allocation callsite and its address range. 
-%Currently, \NP{} obtains the callsite of the allocation from the stack directly.  
+\NP{} intercepts synchronizations in order to detect possible thread migrations, which will be explained later. \NP{} also intercepts memory allocations so that we could attribute performance issues to different callsites, assisting data-centric analysis~\cite{XuNuma}. For each memory allocation, \NP{} records the allocation callsite and its address range. 
 \NP{} also intercepts thread creations in order to set up per-thread data structure. 
-In particular, it assigns each thread a thread index.
+%In particular, it assigns each thread a thread index.
 
-%each thread will be assigned a thread index that starts with 0, which will be incremented upon each new thread creation. The thread index of each thread will be stored in thread-local storage in order to obtain it quickly. 
 
 \subsubsection{Detecting Normal Remote Accesses}
 \label{sec: remote_access}
 
-%As discussed in Section~\ref{sec:numa},  a large number of remote accesses is the most common reason for the performance issue on the NUMA architecture, which is the focus of existing NUMA profilers~\cite{XuNuma, valat:2018:numaprof}. Existing work detects a remote access if the current thread is running on a physical node that is different from the physical node of the corresponding page. However, they impose additional overhead of determining the physical node of each page and each thread. Also, they could only detect remote accesses occurring in the evaluated machine, which is architecture-dependent. 
 
-%As discussed in Section~\ref{sec:numa}, 
-%Instead of basing on the physical node relationship, \NP{} proposes an architecture-independent mechanism that does not require the actual node relationship.
-\textit{\NP{} detects a remote access when an access's thread is different from the corresponding page's initial accessor}, as discussed in Section~\ref{sec:overview}. This is based on the assumption that the OS typically allocates a physical page from the node of the first accessor due to the default first-touch policy~\cite{firsttouch}.  Similar to existing work, \NP{} may over-estimate the number of remote accesses, since an access is not a remote one if the corresponding cache is not evicted. 
-%The over-estimation may generate false alarms that may report non-serious NUMA issues.  
+\NP{} detects a remote access if the current thread accesses a page that was accessed by a different thread for the first time. This is based on the assumption that the OS typically allocates a physical page from the node of the first accessor due to the default first-touch policy~\cite{firsttouch}.  Similar to existing work, \NP{} may over-estimate the number of remote accesses, since an access is not a remote one if the data is still in the cache line. 
 However, this shortcoming can be overcome easily by only reporting issues larger than a specified threshold, as exemplified in our evaluation (Section~\ref{sec:evaluation}).  
 
-\NP{} is carefully designed to reduce its performance and memory overhead.  \NP{} tracks a page's initial accessor to determine a remote access. A naive design is to employ hash table for tracking such information.%, which will  be checked upon each memory access. 
-Due to a large number of memory accesses, a naive design (e.g. hash table) could easily introduce significant performance overhead. 
-Instead, \NP{} maps a continuous range of memory with the shadow memory technique~\cite{qinzhao}, which only requires a simple computation to locate the data. 
-%Specifically, \NP{} predicts the maximum range for heaps (e.g. 4TB) and globals, and then maps a continuous range of memory to store the owner of each page. 
-%For each access, \NP{} requires only a simple computation to locate the corresponding data. 
-%As described above, since \NP{} aims to provide data-centric information that helps users pinpoint susceptible objects with extensive remote accesses, it should determine the corresponding pages and objects. To assist this, 
-\NP{} also maintains the number of accesses for each page in the same map. 
-%Upon each memory access, \NP{} simply increments the number of access for the corresponding page. \NP{} further utilizes the sampling mechanism to reduce the overhead, which only updates remote accesses for \todo{one out of 100 accesses}. 
-We observed that a page without a large number of memory accesses will not cause significant performance issues. Based on this, \NP{} only tracks the detailed accesses for a page, when its number of accesses is larger than a pre-defined (configurable) threshold. 
-%That is, \NP{} does not track the detailed information for most pages. In order to differentiate these pages, \NP{} stores a pointer in the same map that points to the detailed information for some pages. 
-Since the recording uses the same data structures, \NP{} uses an internal pool to maintain such data structures with the exact size, without resorting to the default allocator.  
-%\todo{Maybe too much on this?? Due to the performance concern, \NP{} avoids the use of the default allocator for these data structures.  Instead, \NP{} designs a slab-like allocator that keeps a pool of objects. }  
+\NP{} is further designed to reduce its performance and memory overhead when tracking a page's initial accessor. A naive design is to employ hash table for tracking such information. Due to a large number of memory accesses, this design (e.g. hash table) could easily introduce significant performance overhead since multiple pages are mapped to the same bucket. Instead, \NP{} maps a continuous range of memory to track such information with the shadow memory technique~\cite{qinzhao}. The use of shadow memory only requires a simple computation to locate the data, which also avoids the conflicts of using hash table. 
+\NP{} also maintains the number of accesses for each page in the same map. We observed that a page without a large number of memory accesses will not cause a significant performance slowdown. Based on this, \NP{} only tracks the detailed accesses for a page when the number of accesses on it is larger than a pre-defined (configurable) threshold. 
+Since the recording uses the same data structures, \NP{} designs a slab-like allocator that keeps a pool of objects, without resorting to the default allocator.  
 
-For pages with excessive accesses, \NP{} tracks the following information. \textit{First}, it tracks the threads accessing these pages, which helps to determine whether to use block-wise allocations for fixes. 
-%\todo{For instance, if only two threads access the same page continuously, then we could utilize a block-wise allocation and bind these two threads to the same physical node in order to achieve the better performance}. The detailed fixing strategy is out of the scope, but Section~\ref{sec:casestudies} provides multiple examples. 
-\textit{Second}, \NP{} further 
-divides each page into multiple blocks (e.g., 64 blocks), and tracks the number of accesses on each block.  
+For each page with the number of accesses larger than a threshold, \NP{} tracks the following information. \textit{First}, it tracks the threads accessing this page, which helps determine the fix strategy. For instance, if only two threads access this page, then we could bind these two threads to the same physical node for the better performance. The detailed fixing strategy is out of the scope, but Section~\ref{sec:casestudies} provides multiple examples. 
+\textit{Second}, \NP{} further tracks the number of accesses on each cache line.  
 %records the corresponding access number. Such information will be helpful for data-centric attribution, since an object may only cover part of some pages. 
-This enables us to compute the number of remote accesses of each object more accurately. \textit{Third}, \NP{} further checks whether an object is exclusively read after the first write or not, which could be determined whether duplication is possible or not. 
-%is good to duplicate the data to multiple nodes. Read-exclusively objects can be duplicated to different nodes, in order to improve the locality. 
+This enables us to compute the number of remote accesses of each object more accurately when an object is smaller than a page. \textit{Third}, \NP{} further checks whether an object is exclusively read after the first write or not. For such cases, it is good to duplicate the data to multiple nodes, helping improve the locality. 
 \textit{Last not least}, \NP{} maintains  word-level information for cache lines with excessive cache invalidations, as further described in Section~\ref{sec: cacheline}.
-%Such cache lines will have larger performance impacts than normal remote accesses due to the following two reasons:  the number of cache invalidations will never be over-estimated, which is different from remote accesses; for each cache miss caused by a cache invalidation, the data will be loaded from last-level cache or the memory, which is extremely slow in the NUMA architecture. 
-
-%In the beginning, there are some assumptions \NP{} made here that need to be clarified.To make \NP{} independent from any hardware, OS and scheduling algorithm, \NP{} assumed that each thread could be scheduled to any node randomly. So we considered each thread running on a single NUMA node and this could influence how \NP{} differentiated remote access and local access.For example, if thread-A tries to access a memory page which is first touched by thread-B, this access will be considered as a remote access without considering which nodes thread-A and thread-B are located on in the real world.Because of the first touch policy applied by OS, the memory page will be located on the node that the first touching thread located on.In the \NP{}, we also record the first touching thread id for each page.
-
 
 \textbf{Remote (Access) Score:} \NP{}  proposes a performance metric -- remote score -- to evaluate the seriousness of remote accesses. An object's remote score is defined as the number of remote accesses within a specific interval, which is currently set as one millisecond. Typically, a higher score indicates a more serious performance issue, as shown in Table~\ref{tab:numa_issues}. 
-%Currently, \NP{} only reports issues with the score larger than 1500, if the same object does not have false and true sharing issues, which successfully eliminates all in-significant performance issues. Note that the same score does not indicate the same percentage improvement for different applications after fixes, since the performance can be affected by multiple factors, such as the degree of parallelism and synchronization. 
-For pages with both remote accesses and cache invalidations, we will check whether cache invalidation is dominant or not. If the number of cache invalidations is larger than 50\% of remote accesses, then the major performance issue of this page is caused by cache invalidations. We will omit remote accesses instead. 
+For pages with both remote accesses and cache invalidations, we will check whether cache invalidation is dominant or not. If the number of cache invalidations is larger than 50\% of remote accesses, then the major performance issue of this page is caused by cache invalidations (i.e. false or true sharing). We will omit remote accesses instead. 
  
-%\NP{} tracks the thread index of the first-touch thread for each virtual page. Upon each memory access, \NP{} simply checks whether the current thread is different from the page's the first-touch thread or not. If not, then the current access will be counted as a remote access.  
-
-
-   
-
-%Basically, \NP{} used $Rpm_{NUMA}$(remote access number per millisecond) to indicate how serious the NUMA issues are for each object memory. Main memory access usually happened when the cache is missed. If an memory request hit CPU cache, it will not go to main memory and will not bring any NUMA issues.However the CPU cache hit rate is determined by lots of factors like hardware implementation and data access pattern of applications.
-
-
 \subsubsection{Detecting False and True Sharing Issues}
 \label{sec: cacheline}
 
-Based on our observation,  cache coherence has a higher performance impact than normal remote accesses. Further, false sharing requires a different fixing strategy, and is typically addressed by padding. 
-%False sharing issues can be fixed with the padding of data structure, while remote accesses typically are fixed with interleaved page allocations. Therefore,
-\NP{} detects false and true sharing separately, which is different from all NUMA profilers. 
-%This is the reason why \NP{} marks all false/true sharing issues as ``New'' in Table~\ref{tab:numa_issues}, although other profilers (not NUMA-profilers) could also detect such issues.  
+Based on our observation, cache coherence has a higher performance impact than normal remote accesses. Cache coherence problems can be further caused by false and true sharing, where multiple threads are accessing the same cache line simultaneously. Differently, false sharing occurs when multiple threads are accessing different words, while true sharing is caused by accesses to the same words. \NP{} separates false and true sharing from remote accesses, which is different from all NUMA profilers, since they may require a different fixing strategy. For instance, false sharing can be fixed by the padding,  where remote accesses typically are fixed with interleaved page allocations.
 
-\NP{} detects false/true sharing with a similar mechanism as Predator~\cite{Predator}, but adapting it for the NUMA architecture. Predator tracks cache invalidations as follows: if a thread writes a cache line that has been loaded by multiple threads, this write operation introduces a cache invalidation. But this mechanism under-estimates the number of cache invalidations. Whenever multiple cores hold the same cache line, this  write operation may introduce multiple  cache invalidations and therefore multiple remote accesses. 
-%To achieve this, 
-Therefore, \NP{} tracks the number of threads  loaded the same cache line, and increases cache invalidation by the number of threads that has loaded this cache line. Further, \NP{} differentiates remote cache invalidations from local ones since they may have different performance impacts: if a thread should load the memory from a remote node, then it is a remote cache invalidation. Otherwise, it is a local cache invalidation. \NP{} only focuses on remote cache invalidations that have a higher impact on the NUMA machine.  
-%To support this, \NP{} de-duplicates the loads from the same thread with a bitmap. Upon every write, \NP{} computes the number of bits that has been set to one. 
+\NP{} detects false/true sharing with a similar mechanism as Predator~\cite{Predator}, but adapting it for the NUMA architecture. Predator tracks cache invalidations as follows: if a thread writes a cache line that has been accessed by a different thread recently, this write operation introduces a cache invalidation. However, this mechanism underestimates the number of cache invalidations. Whenever multiple cores hold the same cache line, this  write operation should introduce more than one cache invalidation. 
+Therefore, \NP{} tracks the number of threads that have loaded the same cache line and increases the number of cache invalidations correspondingly. Further, \NP{} differentiates remote cache invalidations from local ones: if a thread should load the memory from a remote node, then it is a remote cache invalidation. Otherwise, it is a local cache invalidation. \NP{} only focuses on remote cache invalidations that have a higher impact on the NUMA machine.  
+
 
 \textbf{False/True Sharing Score:} 
-%In order to further evaluate the seriousness of false/true sharing, which is missed in Predator~\cite{Predator}, 
-\NP{} further proposes false/true sharing scores for each corresponding object, which is lacked in Predator~\cite{Predator}. The scores are computed by dividing the number of cache invalidations with the product of time (milliseconds) and the number of threads. The number of threads is employed to reduce the impact of parallelization degree, with the architecture-independent method.  
-%within a specific interval
-%They are computed similarly as remote access score, but uses the number of cache invalidations within a specific interval. Based on our evaluation, even a lower false sharing score may have a larger performance impact on the performance, comparing to the remote access score. 
-\NP{}  differentiates false sharing from true sharing by recording word-level accesses. 
-%For each word, \NP{} will record the thread index accessing it. Whenever two threads access the same word, the thread index will be set to a special number that cannot be a normal thread index, such as 0xFFFFFFFF. N
-Note that \NP{} only records word-level accesses for cache lines with the number of writes larger than a pre-defined threshold, due to the performance concern. 
-%We In a SMP machine, the access on an invalidated cache line can be satisfied from the L2 cache. However, 
-
-
-
+\NP{} further proposes false/true sharing scores for each corresponding object, which is lacked in Predator~\cite{Predator}. The scores are computed by dividing the number of cache invalidations with the product of time (milliseconds) and the number of threads. The number of threads is employed to reduce the impact with different parallelization degree. That is, \NP{} could report the similar scores when running on a machine with different number of cores (and threads).
+\NP{}  differentiates false sharing from true sharing by recording word-level information.
 
 \subsubsection{Detecting Issues Caused by Thread Migration}
 
-As discussed in Section~\ref{sec:intro}, \NP{} identifies applications with excessive thread migrations, which are omitted by all existing NUMA profilers. 
-%Some applications are very sensitive to thread migrations while some are not. 
-%Therefore, it is helpful to report whether it is necessary to use thread binding or not. 
-Thread migration may introduce excessive remote accesses. After the migration, a thread is forced to reload all data from the original node, and access its stack remotely afterwards. Further, all deallocations from this thread may be returned to freelists of remote nodes, causing more remote accesses afterwards.    
-%Even worse, this thread's existing heap objects can be returned to freelists of remote nodes, due to no-existence of origin-aware allocators, which may cause more remote accesses afterwards.       
+As discussed in Section~\ref{sec:intro}, \NP{} identifies applications with excessive thread migrations, which are omitted by all existing NUMA profilers. Thread migration may introduce excessive remote accesses because of the following reasons: (1) after the migration, a thread is forced to reload all data from the original node, and access its stack remotely afterwards; (2) All deallocations from this migrated thread may be returned to freelists of remote nodes, causing more remote accesses afterwards, which is based on our understanding of most allocators.    
 
-%\NP{} identifies applications that are sensitive to thread migrations. \NP{} intercepts all synchronizations in order to detect the number of thread migrations. 
-%\text\NP{} employs the number of lock contentions, condition wait, and barrier wait to measure the possible 
-%For mutex locks, \NP{} will increment the number of thread migration whenever there is a lock contention. This is due to the fact that the OS scheduler cannot guarantee to schedule a thread back to its previous node as far as a thread is suspended. Similarly, whenever there is a condition wait or a barrier wait, \NP{} also increments the number of thread migrations. 
+%\todo{Stop checking start}
 
-\textbf{Thread Migration Score:} \NP{} evaluates the seriousness of thread migrations with thread migration scores. This score is computes as the following formula: 
+\textbf{Thread Migration Score (TMS):} \NP{} evaluates the seriousness of thread migrations with the thread migration score. This score is computed as the following formula: 
 %\todo{Jin: Add the formula}
-$$S = p \underset{t \in T}{\sum } m_{t} / (rt \cdot \left | T \right |)$$
+\begin{equation}
+%S = P \cdot (\underset{i \in T}{\sum } c_{t} / (R \cdot |T|))
+TMS =  \dfrac{\sum_{i=0}^{|T|} {M_i}}{R} \cdot P \label{equation:tms}
+\end{equation}
 
-\todo{why would the total number of threads looks like the absolute value of the number of threads? : where $S$ is the thread migration score, $p$ is the parallel phase percentage of the program, $T$ is threads in the program, $\left | T \right |$ is the number of total threads, $m_t$ is the possible migration times for thread $t$, and $rt$ is total running seconds of the program. }
+%\todo{why would the total number of threads looks like the absolute value of the number of threads? : I think T represents a collection, |T| means the size of the collection.}
+%\todo{What this formula means? What do you mean R * |T|? Why we design like this? Do we only care about the parallization and assume that there is no migration in serial phases. } \XZ{I think we did not assume that there is no migration in serial phases.It is based on the logic that high parallelization means high possible potential improvements. Dividing by (R*|T|) means the average contention times per thread in a second.}
 
-\NP{} utilizes the total number of lock contentions, condition waits, and barrier waits as the possible migration times, instead of identifying the real migration times. Therefore, \NP{} predicts the potential performance impact caused by thread migration. \NP{} utilizes the preloading mechanism to intercept these synchronizations, and detects potential lock contention by checking the status of lock. The parallel phase percentage indicates the necessarity of performing the optimization. For instance, if the parallel phase percentage is only 1\%, then we could at most improve the performance by 1\%.   In order to reduce the effect of parallelization, the score is further divided by the number of threads. Based on our evaluation, this parameter makes two platforms with different number of threads have very similar results. 
+Here,  $M_i$ is the possible migration times of  thread $i$, $R$ is total running time (seconds) of the program, and $P$ is the parallel phase percentage. Overall, this formula computes the average migration times per thread per second at first, and then multiplies the value with the parallel phase percentage. The multiplication is introduced because applications with a small percentage of parallel phase should have a lower performance impact that can be caused by thread migration. 
 
-When an application has a large number of thread migrations,  \NP{} suggests users to utilize thread binding to reduce remote accesses. As shown in Table~\ref{tab:numa_issues}, thread migration may degrade the performance of an application (i.e., \texttt{fluidanimate}) by up to 418\%. This shows the importance to eliminate thread migration for such applications.  However, some applications in PARSEC (as not shown in Table~\ref{tab:numa_issues}) have very marginal performance improvement with thread binding. 
+a%ll threads in the program,  |T| is the number of total threads, $c_t$ is the lock contention times for thread $t$, and $R$ is total running seconds of the program.
 
-%Even developers made a lot of efforts to do memory distribution or solve cache line sharing problems, they could still find not too much improvements in performance.One of very crucial reasons is that threads migrated to another node, but memory stayed still. So no matter how big efforts developers made to optimize their code, remote access still can not be eliminated.Even worse, in most cases stack memories are only accessed by a single thread, which are initially located on the same node with that thread.But the local access will become remote access after the thread makes migration.That is one reason that applications can get huge performance improvements just by simply thread binding based on our extensive experiments.
+Similarly, \NP{} predicts the possible migration times, instead of detecting the real migration times. \NP{} utilizes the total number of lock contentions, condition waits, and barrier waits as the estimation of possible migration times, which could be higher than the real migration times. To correct these numbers, \NP{} intercepts the above-mentioned synchronizations via a preloading mechanism, where lock contention can be identified by checking the status of the lock. After that, \NP{} further utilizes the Equation~\ref{equation:tms} to filter out serious issues that require user attention. 
 
-%Typically, it is highly possible that threads made migration if lock contention happened.Unless it is highly possible the thread will be rescheduled to the origin core.So \NP{} will only check whether a thread migrates to another node or not when a thread gets blocked because of lock waiting, and this also helps to reduce the overheads caused by frequently kernel function call to get current NUMA node id.To check whether a thread gets blocked or not, \NP{} also intercept all blocking lock function calls in standard C library, like pthread\_mutex\_lock and pthread\_barrier\_wait.Inside the \NP{}, it stimulated the behaviors of each blocking lock before acquired the real lock function,so that we could get the lock contention status before the thread goes blocked.
+The parallel phase percentage indicates the necessity of performing the optimization. For instance, if the parallel phase percentage is only 1\%, then we could at most improve the performance by 1\%, which is not worthy of the fixes.   In order to produce a similar score even when the number of threads is significantly different, the score is further divided by the number of threads. 
+%Based on our evaluation, this parameter makes two platforms with different number of threads have very similar results. 
+
+When an application has a large number of thread migrations,  \NP{} suggests users utilize thread binding to reduce remote accesses. As shown in Table~\ref{tab:numa_issues}, the thread migration may degrade the performance of an application (i.e., \texttt{fluidanimate}) by 418\%. This shows the importance to eliminate thread migration for such applications.  However, some applications in PARSEC (as not shown in Table~\ref{tab:numa_issues}) have very marginal performance improvement with thread binding. 
 
 \subsubsection{Detecting Load Imbalance}
 \label{sec:loadimbalance}
 
-Load imbalance is another factor that could significantly affect the performance on the NUMA architecture, which could cause node imbalance and interconnect congestion. \NP{} detects load imbalance among different types of threads, which is omitted by existing NUMA-profilers.  %Whenever there exists load imbalance, some hardware nodes may have more memory accesses than other nodes, which become the performance bottleneck. 
-
-%A typical type of load imbalance may occur in the main thread, where the main thread allocates a large number of objects, and then passes such objects to its child threads. Then the physical node that the main thread is located becomes the performance bottleneck. This type of load imbalance could be detected via remote accesses, without an additional mechanism, where most existing NUMA-profilers could detect such issues.  
+Load imbalance is another factor that could significantly affect the performance of the NUMA architecture. That is,  some hardware nodes may have more memory accesses than other nodes that  could lead to node imbalance and interconnect congestion. \NP{} detects load imbalance among different types of threads, which is omitted by existing NUMA-profilers.  
 
 
-%This type is caused by thread imbalance, where applications have multiple types of threads. Whenever there exists thread imbalance, some hardware cores (and threads) are under-utilized, wasting cycles for waiting for the progress of their communicative threads, while some threads are busy. 
-The detection is based on an assumption: \textit{every type of threads should have a similar number of memory accesses in a balanced environment}. \NP{} proposes to utilize the number of memory accesses to predict the workload of each types of threads. In particular, \NP{} monitors memory accesses on heap objects and globals, and then utilizes the sum of such memory accesses to check the imbalance. 
+\NP{} records the number of memory accesses of every thread and then summarizes them together for the same type of threads. In particular, \NP{} focuses on accesses of heap objects and globals, which could cause remote accesses (and therefore performance issues). Threads with the same thread function are considered to be the same type of threads. If every type of threads has an imbalanced number of accesses, then \NP{} further confirms whether the number of threads for each type is proportional to the number of accesses from the particular type. If not, then the application has a load imbalance issue. 
 
 
-%We assume that every type of threads should have the similar number of memory accesses \NP{} monitors every memory access on heap objects and globals. We assume that most memory accesses are actually performing useful workload, except spin-waiting situations. Therefore,  the number of memory accesses of each thread can be utilized to model the workload of this thread. Whenever there exists load imbalance, typically between different types of threads, then the number of memory accesses for each type of threads can be varied dramatically. 
-
-%Whenever the total numbers  of memory accesses for each type of threads are varied dramatically, \NP{} predicts that there exists thread load imbalance inside. 
-
-\NP{} further predicts an optimal thread assignment with the number of memory accesses. A balance assignment is to balance  memory accesses from each type of threads. For instance, if the number of memory accesses on two type of threads has a one-to-two portion, then \NP{} will suggest to assign threads in one-to-two portion. Section~\ref{sec:casestudies} further evaluates \NP{}'s suggested assignment, where \NP{} significantly outperforms another work~\cite{SyncPerf}.
+\NP{} further predicts an optimal thread assignment based on the number of memory accesses. 
+%A balance assignment is to balance  memory accesses from each type of threads. 
+For instance, if the number of memory accesses on two type of threads has a one-to-two portion, then \NP{} will suggest to assign threads in one-to-two portion. Section~\ref{sec:casestudies} further evaluates \NP{}'s suggested assignment, where \NP{} significantly outperforms another work~\cite{SyncPerf}. Note that it is important to consider memory accesses from the libraries. Otherwise, \NP{} may suggest a thread assignment that cannot achieve good performance. 
 %,   outperforms the state-of-the-art, %Experimental results show that \NP{}'s suggested assignment outperforms the state-of-the-art, achieving good performance for two evaluated applications with load imbalance issues. 
 
 
@@ -183,7 +114,7 @@ On the other head, \NP{} also detects how "close" each two threads are, and clos
 How to identify balanced thread and unbalanced thread is little trivial.For a thread A, the mean deviation is computed for the distance between thread A and all other threads.If the mean deviation is small, thread A will be marked as a balanced thread since it has very similar distance with other threads.On the other hand, if the mean deviation is big enough, the thread will be marked as unbalanced but it is not 100 percent.For example, if thread A is marked as balanced thread and its average number of remote memory requests is significantly bigger than other threads , it will influence the mean deviation of others.To solve this problem, \NP{} did two rounds computation of mean deviation to mark all threads as balanced or unbalanced.In the first round, all threads are involved and only balanced threads are marked if it contains a low mean deviation.In the second round, the threads that has bean marked as balanced in the first round will be removed and the mean deviation is computed again.All the unmarked threads will be marked based on the mean deviation value from the second round computation.Besides, main thread is always not involved in the two rounds computation, since main thread is usually balanced and contains huge amount of remote memory request which could influence the the mean deviation of others.
 \todo{can add some pictures here}
 
-After all unbalanced threads are marked, \NP{} will try to bind closest threads into a same cluster.In this case, a simple but an effective algorithm is applied.We assime K is number of NUMA nodes and N is the number of cores in a single node, so the ideal number of threads in a single cluster is N.We can imagine all unbalanced threads are nodes, and they are connected with undirected edges with length as their distance.\NP{} treats each node as a center and draw a circle with a radius of N.If two circles intersect with each other, their centers are the most closest N node for each other and should be in a same cluster.In a ideal situation, this could formulate less K clusters, which is the optimal thread clustering solution.And balanced threads can be assigned to the formulated clusters randomly.However in most cases, more than K clusters could be produced, since the complicated relationships between threads.So after the clusters are formed, \NP{} treat the thread with the most remote memory requests as a center in each cluster and draw a circle with radius of $2N$.If two cycles are intersected and the clusters that the two center threads belong to can be merged, the two clusters will be merged into one single cluster.As long as the total number of threads inside one cluster is less or equal to N, it is acceptable. \NP{} will continue this process until less than K clusters are formed or no any two clusters can be merged together because they already contain a big number of threads.After this process finished, balanced threads can be assigned to any cluster randomly. 
+After all unbalanced threads are marked, \NP{} will try to bind closest threads into a same cluster.In this case, a simple but an effective algorithm is applied.We assume K is number of NUMA nodes and N is the number of cores in a single node, so the ideal number of threads in a single cluster is N.We can imagine all unbalanced threads are nodes, and they are connected with undirected edges with length as their distance.\NP{} treats each node as a center and draw a circle with a radius of N.If two circles intersect with each other, their centers are the most closest N node for each other and should be in a same cluster.In a ideal situation, this could formulate less K clusters, which is the optimal thread clustering solution.And balanced threads can be assigned to the formulated clusters randomly.However in most cases, more than K clusters could be produced, since the complicated relationships between threads.So after the clusters are formed, \NP{} treat the thread with the most remote memory requests as a center in each cluster and draw a circle with radius of $2N$.If two cycles are intersected and the clusters that the two center threads belong to can be merged, the two clusters will be merged into one single cluster.As long as the total number of threads inside one cluster is less or equal to N, it is acceptable. \NP{} will continue this process until less than K clusters are formed or no any two clusters can be merged together because they already contain a big number of threads.After this process finished, balanced threads can be assigned to any cluster randomly. 
 \todo{adding some equations or pictures}
 
 
